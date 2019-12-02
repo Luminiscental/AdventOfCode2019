@@ -2,10 +2,6 @@
 AdventOfCode2019 - Day 2
 """
 
-import util
-
-PUZZLE_INPUT = [int(number) for number in util.get_input(2).split(",")]
-
 
 class UnknownOpcodeException(Exception):
     """
@@ -54,6 +50,13 @@ class Interpretor:
         return self.memory[0]
 
 
+def parse(puzzle_input):
+    """
+    Parse the input into a list of opcodes.
+    """
+    return [int(number) for number in puzzle_input.split(",")]
+
+
 def part1(opcodes):
     """
     Solve for the answer to part 1.
@@ -87,15 +90,12 @@ def part2(opcodes):
             print("WARNING: program is not linear")
 
     desired_output = 19690720
-    verbs = [(desired_output - noun_term * noun - constant_term) //
-             verb_term for noun in range(100)]
+    verbs = [
+        (desired_output - noun_term * noun - constant_term) // verb_term
+        for noun in range(100)
+    ]
     verbs = [verb for verb in verbs if verb >= 0]
     noun, verb = len(verbs) - 1, verbs[-1]
     if program(noun, verb) != desired_output:
         print(f"WARNING: minimal solution failed")
     return 100 * noun + verb
-
-
-if __name__ == "__main__":
-    print(f"part1: {part1(PUZZLE_INPUT)}")
-    print(f"part2: {part2(PUZZLE_INPUT)}")
