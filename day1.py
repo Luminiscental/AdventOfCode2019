@@ -4,8 +4,7 @@ AdventOfCode2019 - Day 1
 
 import util
 
-
-PUZZLE_INPUT = util.get_input(1)
+PUZZLE_INPUT = [int(line) for line in util.get_input(1).splitlines()]
 
 
 def fuel_from_mass1(mass):
@@ -29,16 +28,20 @@ def fuel_from_mass2(mass):
     return result
 
 
-def run():
+def part1(masses):
     """
-    Solve and display the answer.
+    Solve for the answer to part 1.
     """
-    masses = [int(line) for line in PUZZLE_INPUT.splitlines()]
-    fuel1 = sum(fuel_from_mass1(mass) for mass in masses)
-    fuel2 = sum(fuel_from_mass2(mass) for mass in masses)
-    print(f"part1: {fuel1}")
-    print(f"part2: {fuel2}")
+    return sum(fuel_from_mass1(mass) for mass in masses)
+
+
+def part2(masses):
+    """
+    Solve for the answer to part 2.
+    """
+    return sum(fuel_from_mass2(mass) for mass in masses)
 
 
 if __name__ == "__main__":
-    run()
+    print(f"part1: {part1(PUZZLE_INPUT)}")
+    print(f"part2: {part2(PUZZLE_INPUT)}")
