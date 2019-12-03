@@ -106,20 +106,20 @@ def parse_wire(string):
         direction = elem[0]
         distance = int(elem[1:])
         if direction == "L":
-            line_cursor = Point(cursor.x - distance, cursor.y)
-            lines.append(Line(line_cursor, distance, True))
+            line_start = Point(cursor.x - distance, cursor.y)
+            lines.append(Line(line_start, distance, True))
             cursor.x -= distance
         elif direction == "R":
-            line_cursor = Point(cursor.x, cursor.y)
-            lines.append(Line(line_cursor, distance, True))
+            line_start = Point(cursor.x, cursor.y)
+            lines.append(Line(line_start, distance, True))
             cursor.x += distance
         elif direction == "D":
-            line_cursor = Point(cursor.x, cursor.y - distance)
-            lines.append(Line(line_cursor, distance, False))
+            line_start = Point(cursor.x, cursor.y - distance)
+            lines.append(Line(line_start, distance, False))
             cursor.y -= distance
         elif direction == "U":
-            line_cursor = Point(cursor.x, cursor.y)
-            lines.append(Line(line_cursor, distance, False))
+            line_start = Point(cursor.x, cursor.y)
+            lines.append(Line(line_start, distance, False))
             cursor.y += distance
         else:
             raise ValueError(f"Unknown direction '{direction}'")
