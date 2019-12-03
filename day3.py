@@ -7,178 +7,156 @@ import math
 
 class Point:
     """
-    Simple 2D point representation.
+    A mutable 2D point.
     """
 
     def __init__(self, x, y):
         self.x = x
         self.y = y
 
-    def __str__(self):
-        return f"Point({self.x}, {self.y})"
-
     def __eq__(self, other):
-        return self.x == other.x and self.y == other.y
+        if isinstance(other, Point):
+            return self.x == other.x
+        return False
 
     def __hash__(self):
         return hash((self.x, self.y))
 
-    def distance(self, other):
-        """
-        Return the distance from another point.
-        """
-        xdiff = self.x - other.x
-        ydiff = self.y - other.y
-        return math.sqrt(xdiff ** 2 + ydiff ** 2)
-
     def transpose(self):
         """
-        Return the transposition of this point.
+        Return the transpose of this point.
         """
         return Point(self.y, self.x)
+
+    def distance(self, other):
+        """
+        Return the distance to another point.
+        """
+        diff = Point(self.x - other.x, self.y - other.y)
+        return math.sqrt(diff.x ** 2 + diff.y ** 2)
 
 
 class Line:
     """
-    Represents a finite line on the grid.
+    Represents a line on the grid, parametrized by start point, length, and whether it's
+    horizontal or vertical. The direction is always positive (up or right) from the start point.
     """
 
-    def __init__(self, start, distance, horizontal):
+    def __init__(self, start, length, horizontal):
         self.start = start
-        self.distance = distance
+        self.length = length
         self.horizontal = horizontal
+        if self.horizontal:
+            self.end = Point(self.start.x + self.length, self.start.y)
+        else:
+            self.end = Point(self.start.x, self.start.y + self.length)
 
     def __str__(self):
-        end_point = (
-            Point(self.start.x + self.distance, self.start.y)
-            if self.horizontal
-            else Point(self.start.x, self.start.y + self.distance)
-        )
-        return f"{self.start} -> {end_point}"
+        return f"{self.start} -> {self.end}"
+
+    def xrange(self):
+        """
+        Return the range of x-values spanned by this line.
+        """
+        return range(self.start.x, self.end.x + 1)
+
+    def yrange(self):
+        """
+        Return the range of y-values spanned by this line.
+        """
+        return range(self.start.y, self.end.y + 1)
 
     def transpose(self):
         """
-        Return the transposition of this line.
+        Return the transpose of this line.
         """
-        return Line(self.start.transpose(), self.distance, not self.horizontal)
+        return Line(self.start.transpose(), self.length, not self.horizontal)
 
     def intersections(self, other):
         """
-        Return a list of points of intersection between this and another line.
+        Return a list of points of intersection between this and another line in the grid.
         """
-        if self.horizontal:
-            if other.horizontal:
-                # Parrallel case:
-                if self.start.y != other.start.y:
-                    return []
-
-                # Collinear case:
-                start = max(self.start.x, other.start.x)
-                end = min(self.start.x + self.distance, other.start.x + other.distance)
-                return [Point(x, self.start.y) for x in range(start, end + 1)]
-
-            # Perpendicular case:
-            xstart = self.start.x
-            xend = self.start.x + self.distance
-            ystart = other.start.y
-            yend = other.start.y + other.distance
-
-            xintersect = other.start.x
-            yintersect = self.start.y
-
-            if xintersect not in range(xstart, xend + 1) or yintersect not in range(
-                ystart, yend + 1
-            ):
+        # Transpose to only deal with the case where self is horizontal:
+        if not self.horizontal:
+            return [
+                point.transpose()
+                for point in self.transpose().intersections(other.transpose())
+            ]
+        # Parrallel case:
+        if other.horizontal:
+            if self.start.y != other.start.y:
                 return []
+            # Collinear case:
+            start = max(self.start.x, other.start.x)
+            end = min(self.end.x, other.end.x)
+            return [Point(x, self.start.y) for x in range(start, end + 1)]
+        # Perpendicular case:
+        xintersect = other.start.x
+        yintersect = self.start.y
+        if xintersect not in self.xrange() or yintersect not in other.yrange():
+            return []
+        return [Point(xintersect, yintersect)]
 
-            return [Point(xintersect, yintersect)]
-        # Delegate to the other case by transposing
-        return [
-            point.transpose()
-            for point in self.transpose().intersections(other.transpose())
-        ]
 
-
-class Wire:
+def parse_wire(string):
     """
-    A wire on the grid.
+    Parse an ordered list of lines from a string of directions.
     """
-
-    def __init__(self, lines):
-        self.lines = lines
-
-    @staticmethod
-    def from_string(string):
-        """
-        Parse the wire from a comma separated string of directions.
-        """
-        lines = []
-        start = Point(0, 0)
-        directions = string.split(",")
-
-        for elem in directions:
-            direction = elem[0]
-            distance = int(elem[1:])
-
-            if direction == "L":
-                line_start = Point(start.x - distance, start.y)
-                lines.append(Line(line_start, distance, True))
-                start.x -= distance
-            elif direction == "R":
-                line_start = Point(start.x, start.y)
-                lines.append(Line(line_start, distance, True))
-                start.x += distance
-            elif direction == "D":
-                line_start = Point(start.x, start.y - distance)
-                lines.append(Line(line_start, distance, False))
-                start.y -= distance
-            elif direction == "U":
-                line_start = Point(start.x, start.y)
-                lines.append(Line(line_start, distance, False))
-                start.y += distance
-            else:
-                raise ValueError
-
-        return Wire(lines)
+    lines = []
+    cursor = Point(0, 0)
+    directions = string.split(",")
+    for elem in directions:
+        direction = elem[0]
+        distance = int(elem[1:])
+        if direction == "L":
+            line_cursor = Point(cursor.x - distance, cursor.y)
+            lines.append(Line(line_cursor, distance, True))
+            cursor.x -= distance
+        elif direction == "R":
+            line_cursor = Point(cursor.x, cursor.y)
+            lines.append(Line(line_cursor, distance, True))
+            cursor.x += distance
+        elif direction == "D":
+            line_cursor = Point(cursor.x, cursor.y - distance)
+            lines.append(Line(line_cursor, distance, False))
+            cursor.y -= distance
+        elif direction == "U":
+            line_cursor = Point(cursor.x, cursor.y)
+            lines.append(Line(line_cursor, distance, False))
+            cursor.y += distance
+        else:
+            raise ValueError(f"Unknown direction '{direction}'")
+    return lines
 
 
 def parse(puzzle_input):
     """
-    Parse the input into a list of directions for the two wires.
+    Parse the input into a list of lines for each wire.
     """
-    wires = [Wire.from_string(wire_line) for wire_line in puzzle_input.splitlines()]
-    return wires[0], wires[1]
+    return [parse_wire(wire_line) for wire_line in puzzle_input.splitlines()]
 
 
-def part1(wire_tuple):
+def part1(wires):
     """
     Solve for the answer to part 1.
     """
-    wire1, wire2 = wire_tuple
-
     intersections = set()
-    for line in wire1.lines:
-        for line2 in wire2.lines:
-            intersections.update(line.intersections(line2))
-
+    for line1 in wires[0]:
+        for line2 in wires[1]:
+            intersections.update(line1.intersections(line2))
     distances = [point.x + point.y for point in intersections if point != Point(0, 0)]
     return min(distances)
 
 
-def part2(wire_tuple):
+def part2(wires):
     """
     Solve for the answer to part 2.
     """
-    wire1, wire2 = wire_tuple
-
     intersections = set()
-
     steps1 = 0
-    for line1 in wire1.lines:
-
+    for line1 in wires[0]:
         steps2 = 0
-        for line2 in wire2.lines:
-
+        for line2 in wires[1]:
             for intersection in line1.intersections(line2):
                 if intersection == Point(0, 0):
                     continue
@@ -189,10 +167,7 @@ def part2(wire_tuple):
                         steps2 + int(intersection.distance(line2.start)),
                     )
                 )
-
-            steps2 = steps2 + line2.distance
-
-        steps1 = steps1 + line1.distance
-
+            steps2 = steps2 + line2.length
+        steps1 = steps1 + line1.length
     intersection, dist1, dist2 = min(intersections, key=lambda tup: tup[1] + tup[2])
     return dist1 + dist2
