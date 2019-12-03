@@ -51,9 +51,6 @@ class Line:
         else:
             self.end = Point(self.start.x, self.start.y + self.length)
 
-    def __str__(self):
-        return f"{self.start} -> {self.end}"
-
     def xrange(self):
         """
         Return the range of x-values spanned by this line.
