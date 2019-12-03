@@ -7,6 +7,7 @@ import requests
 
 import day1
 import day2
+import day3
 
 
 def get_input(day_number):
@@ -33,7 +34,7 @@ def run_day(day_num):
     Solve and print the answer for a given day.
     """
     puzzle_input = get_input(day_num)
-    day_module = [day1, day2][day_num - 1]
+    day_module = [day1, day2, day3][day_num - 1]
     parsed_input = day_module.parse(puzzle_input)
     part1 = day_module.part1(parsed_input)
     part2 = day_module.part2(parsed_input)
