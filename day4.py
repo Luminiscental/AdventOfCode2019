@@ -3,6 +3,22 @@ AdventOfCode2019 - Day 4
 """
 
 
+def iter_chains(values):
+    """
+    Returns an iterator over the chains of repeated values in a sequence.
+    """
+    prev = values[0]
+    chain = 1
+    for value in values[1:]:
+        if value == prev:
+            chain = chain + 1
+        else:
+            yield prev, chain
+            chain = 1
+            prev = value
+    yield prev, chain
+
+
 def parse(puzzle_input):
     """
     Parse the password range from the input.
@@ -18,7 +34,9 @@ def part1(password_range):
 
     def pred(password):
         digits = [int(c) for c in str(password)]
-        contains_double = any(prev == curr for prev, curr in zip(digits, digits[1:]))
+        contains_double = any(
+            chain_length >= 2 for _, chain_length in iter_chains(digits)
+        )
         is_increasing = all(prev <= curr for prev, curr in zip(digits, digits[1:]))
         return contains_double and is_increasing
 
@@ -32,16 +50,9 @@ def part2(password_range):
 
     def pred(password):
         digits = [int(c) for c in str(password)]
-        contains_double = False
-        for i, _ in enumerate(digits):
-            double_candidate = digits[i]
-            double = digits[i : i + 2]
-            surrounding = digits[max(0, i - 1) : i + 3]
-            if (
-                double.count(double_candidate) == 2
-                and surrounding.count(double_candidate) == 2
-            ):
-                contains_double = True
+        contains_double = any(
+            chain_length == 2 for _, chain_length in iter_chains(digits)
+        )
         is_increasing = all(prev <= curr for prev, curr in zip(digits, digits[1:]))
         return contains_double and is_increasing
 
