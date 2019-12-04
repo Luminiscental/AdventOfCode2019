@@ -19,41 +19,44 @@ def iter_chains(values):
     yield prev, chain
 
 
-def parse(puzzle_input):
+def increasing(sequences):
     """
-    Parse the puzzle input into a list of digit lists.
+    Given a sequence of sequences return a list over all the sequences that are increasing.
     """
     return [
+        sequence
+        for sequence in sequences
+        if all(prev <= curr for prev, curr in zip(sequence, sequence[1:]))
+    ]
+
+
+def parse(puzzle_input):
+    """
+    Parse the puzzle input into a list of increasing digit lists in the range.
+    """
+    return increasing(
         [int(c) for c in str(password)]
         for password in range(*[int(number) for number in puzzle_input.split("-")])
-    ]
+    )
 
 
 def part1(passwords):
     """
     Solve for the answer to part 1.
     """
-
-    def pred(digits):
-        contains_double = any(
-            chain_length >= 2 for _, chain_length in iter_chains(digits)
-        )
-        is_increasing = all(prev <= curr for prev, curr in zip(digits, digits[1:]))
-        return contains_double and is_increasing
-
-    return sum(1 for password in passwords if pred(password))
+    return sum(
+        1
+        for password in passwords
+        if any(chain_length >= 2 for _, chain_length in iter_chains(password))
+    )
 
 
 def part2(passwords):
     """
     Solve for the answer to part 2.
     """
-
-    def pred(digits):
-        contains_double = any(
-            chain_length == 2 for _, chain_length in iter_chains(digits)
-        )
-        is_increasing = all(prev <= curr for prev, curr in zip(digits, digits[1:]))
-        return contains_double and is_increasing
-
-    return sum(1 for password in passwords if pred(password))
+    return sum(
+        1
+        for password in passwords
+        if any(chain_length == 2 for _, chain_length in iter_chains(password))
+    )
