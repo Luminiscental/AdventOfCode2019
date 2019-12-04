@@ -11,17 +11,6 @@ def parse(puzzle_input):
     return elems[0], elems[1]
 
 
-def password_predicate(password):
-    """
-    Check if a given password number meet the criteria.
-    """
-    digits = [int(c) for c in str(password)]
-
-    contains_double = any(digits[i] == digits[i + 1] for i in range(len(digits) - 1))
-    is_increasing = all(prev <= curr for prev, curr in zip(digits, digits[1:]))
-    return contains_double and is_increasing
-
-
 def part1(password_range):
     """
     Solve for the answer to part 1.
