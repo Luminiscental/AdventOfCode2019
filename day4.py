@@ -21,39 +21,39 @@ def iter_chains(values):
 
 def parse(puzzle_input):
     """
-    Parse the password range from the input.
+    Parse the puzzle input into a list of digit lists.
     """
-    elems = [int(elem) for elem in puzzle_input.split("-")]
-    return elems[0], elems[1]
+    return [
+        [int(c) for c in str(password)]
+        for password in range(*[int(number) for number in puzzle_input.split("-")])
+    ]
 
 
-def part1(password_range):
+def part1(passwords):
     """
     Solve for the answer to part 1.
     """
 
-    def pred(password):
-        digits = [int(c) for c in str(password)]
+    def pred(digits):
         contains_double = any(
             chain_length >= 2 for _, chain_length in iter_chains(digits)
         )
         is_increasing = all(prev <= curr for prev, curr in zip(digits, digits[1:]))
         return contains_double and is_increasing
 
-    return sum(1 for password in range(*password_range) if pred(password))
+    return sum(1 for password in passwords if pred(password))
 
 
-def part2(password_range):
+def part2(passwords):
     """
     Solve for the answer to part 2.
     """
 
-    def pred(password):
-        digits = [int(c) for c in str(password)]
+    def pred(digits):
         contains_double = any(
             chain_length == 2 for _, chain_length in iter_chains(digits)
         )
         is_increasing = all(prev <= curr for prev, curr in zip(digits, digits[1:]))
         return contains_double and is_increasing
 
-    return sum(1 for password in range(*password_range) if pred(password))
+    return sum(1 for password in passwords if pred(password))
