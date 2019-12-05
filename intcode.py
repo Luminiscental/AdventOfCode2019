@@ -4,8 +4,8 @@ Modulee for the Intcode interpretor.
 
 from collections import namedtuple
 
-# action returns non-none value if a jump occurred
-Opcode = namedtuple("Opcode", "arg_count action jumps")
+# action is a function which takes the arguments and returns whether a jump occured
+Opcode = namedtuple("Opcode", "arg_count action")
 
 
 class Interpretor:
@@ -20,14 +20,14 @@ class Interpretor:
         self.outputter = outputter
 
         self.opcodes = {
-            1: Opcode(3, self.add, False),
-            2: Opcode(3, self.mul, False),
-            3: Opcode(1, self.get_input, False),
-            4: Opcode(1, self.put_output, False),
-            5: Opcode(2, self.jump_if_true, True),
-            6: Opcode(2, self.jump_if_false, True),
-            7: Opcode(3, self.less, False),
-            8: Opcode(3, self.equals, False),
+            1: Opcode(arg_count=3, action=self.add),
+            2: Opcode(arg_count=3, action=self.mul),
+            3: Opcode(arg_count=1, action=self.get_input),
+            4: Opcode(arg_count=1, action=self.put_output),
+            5: Opcode(arg_count=2, action=self.jump_if_true),
+            6: Opcode(arg_count=2, action=self.jump_if_false),
+            7: Opcode(arg_count=3, action=self.less),
+            8: Opcode(arg_count=3, action=self.equals),
         }
 
     def add(self, arg1, arg2, arg3):
@@ -35,12 +35,14 @@ class Interpretor:
         Add two numbers and store in an output.
         """
         self.set(arg3, self.get(arg1) + self.get(arg2))
+        return False
 
     def mul(self, arg1, arg2, arg3):
         """
         Multiply two numbers and store in an output.
         """
         self.set(arg3, self.get(arg1) * self.get(arg2))
+        return False
 
     def get_input(self, arg1):
         """
@@ -49,6 +51,7 @@ class Interpretor:
         if self.inputter is None:
             raise ValueError("This program requires an inputter")
         self.set(arg1, self.inputter())
+        return False
 
     def put_output(self, arg1):
         """
@@ -57,6 +60,7 @@ class Interpretor:
         if self.outputter is None:
             raise ValueError("This program requires an outputter")
         self.outputter(self.get(arg1))
+        return False
 
     def jump_if_true(self, arg1, arg2):
         """
@@ -64,7 +68,8 @@ class Interpretor:
         """
         if self.get(arg1) != 0:
             self.ipointer = self.get(arg2)
-            return ()
+            return True
+        return False
 
     def jump_if_false(self, arg1, arg2):
         """
@@ -72,19 +77,22 @@ class Interpretor:
         """
         if self.get(arg1) == 0:
             self.ipointer = self.get(arg2)
-            return ()
+            return True
+        return False
 
     def less(self, arg1, arg2, arg3):
         """
         Compare two numbers and store in an output.
         """
         self.set(arg3, int(self.get(arg1) < self.get(arg2)))
+        return False
 
     def equals(self, arg1, arg2, arg3):
         """
         Compare two numbers and store in an output.
         """
         self.set(arg3, int(self.get(arg1) == self.get(arg2)))
+        return False
 
     def get(self, arg):
         """
@@ -111,7 +119,7 @@ class Interpretor:
 
     def step(self):
         """
-        Execute the current instruction.
+        Execute the current instruction. Returns whether to coninute executing or not.
         """
         instruction = str(self.memory[self.ipointer])
         args = self.memory[self.ipointer + 1 :]
@@ -121,19 +129,15 @@ class Interpretor:
             return False
         opcode = self.opcodes[opcode_value]
         param_modes = param_modes + [0] * (opcode.arg_count - len(param_modes))
-        if opcode.action(*list(zip(param_modes, args))) is None:
+        if not opcode.action(*list(zip(param_modes, args))):
             self.ipointer = self.ipointer + opcode.arg_count + 1
         return True
 
-    def run(self, opcodes, noun=None, verb=None):
+    def run(self, opcodes):
         """
         Run a list of opcodes.
         """
         self.memory = opcodes.copy()
-        if noun is not None:
-            self.memory[1] = noun
-        if verb is not None:
-            self.memory[2] = verb
         while self.step():
             pass
         return self.memory[0]

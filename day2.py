@@ -16,7 +16,10 @@ def part1(opcodes):
     """
     Solve for the answer to part 1.
     """
-    return intcode.Interpretor().run(opcodes, 12, 2)
+    edited = opcodes.copy()
+    edited[1] = 12
+    edited[2] = 2
+    return intcode.Interpretor().run(edited)
 
 
 def part2(opcodes):
@@ -25,7 +28,10 @@ def part2(opcodes):
     """
 
     def program(noun, verb):
-        return intcode.Interpretor().run(opcodes, noun, verb)
+        edited = opcodes.copy()
+        edited[1] = noun
+        edited[2] = verb
+        return intcode.Interpretor().run(edited)
 
     # assume program is linear
     constant_term = program(0, 0)
