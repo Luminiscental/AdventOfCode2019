@@ -39,6 +39,6 @@ def run_day(day_num):
     day_module = [day1, day2, day3, day4, day5][day_num - 1]
     parsed_input = day_module.parse(puzzle_input)
     part1 = day_module.part1(parsed_input)
-    part2 = day_module.part2(parsed_input)
     print(f"part1: {part1}")
+    part2 = day_module.part2(parsed_input)
     print(f"part2: {part2}")

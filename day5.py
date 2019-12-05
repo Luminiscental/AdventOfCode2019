@@ -18,18 +18,10 @@ def part1(opcodes):
     Solve for the answer to part 1.
     """
     outputs = []
-
-    def inputter():
-        return 1
-
-    def outputter(output):
-        outputs.append(output)
-
+    interpretor = intcode.Interpretor(lambda: 1, outputs.append)
+    interpretor.run(opcodes)
     if any(output != 0 for output in outputs[:-1]):
         print(f"WARNING: test failed")
-
-    interpretor = intcode.Interpretor(inputter, outputter)
-    interpretor.run(opcodes)
     return outputs[-1]
 
 
@@ -37,4 +29,7 @@ def part2(opcodes):
     """
     Solve for the answer to part 2.
     """
-    return None
+    outputs = []
+    interpretor = intcode.Interpretor(lambda: 5, outputs.append)
+    interpretor.run(opcodes)
+    return outputs[-1]
