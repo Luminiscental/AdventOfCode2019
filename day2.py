@@ -2,35 +2,7 @@
 AdventOfCode2019 - Day 2
 """
 
-
-def interpret(opcodes, noun, verb):
-    """
-    Run a list of opcodes.
-    """
-    memory = opcodes.copy()
-    memory[1] = noun
-    memory[2] = verb
-    ipointer = 0
-
-    def bin_op(op):
-        lhs_ptr = memory[ipointer + 1]
-        rhs_ptr = memory[ipointer + 2]
-        out_ptr = memory[ipointer + 3]
-        memory[out_ptr] = op(memory[lhs_ptr], memory[rhs_ptr])
-
-    while True:
-        opcode = memory[ipointer]
-        if opcode == 1:
-            bin_op(lambda a, b: a + b)
-        elif opcode == 2:
-            bin_op(lambda a, b: a * b)
-        elif opcode == 99:
-            break
-        else:
-            raise ValueError
-        ipointer = ipointer + 4
-
-    return memory[0]
+import intcode
 
 
 def parse(puzzle_input):
@@ -44,7 +16,7 @@ def part1(opcodes):
     """
     Solve for the answer to part 1.
     """
-    return interpret(opcodes, 12, 2)
+    return intcode.Interpretor().run(opcodes, 12, 2)
 
 
 def part2(opcodes):
@@ -53,7 +25,7 @@ def part2(opcodes):
     """
 
     def program(noun, verb):
-        return interpret(opcodes, noun, verb)
+        return intcode.Interpretor().run(opcodes, noun, verb)
 
     # assume program is linear
     constant_term = program(0, 0)
