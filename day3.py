@@ -133,6 +133,9 @@ def parse(puzzle_input):
     return [parse_wire(wire_line) for wire_line in puzzle_input.splitlines()]
 
 
+# Shameless O(n^3):
+
+
 def part1(wires):
     """
     Solve for the answer to part 1.
@@ -140,9 +143,11 @@ def part1(wires):
     intersections = set()
     for line1 in wires[0]:
         for line2 in wires[1]:
-            intersections.update(line1.intersections(line2))
-    distances = [point.x + point.y for point in intersections if point != Point(0, 0)]
-    return min(distances)
+            for intersection in line1.intersections(line2):
+                if intersection == Point(0, 0):
+                    continue
+                intersections.add(intersection)
+    return min(point.x + point.y for point in intersections)
 
 
 def part2(wires):
@@ -166,5 +171,4 @@ def part2(wires):
                 )
             steps2 = steps2 + line2.length
         steps1 = steps1 + line1.length
-    intersection, dist1, dist2 = min(intersections, key=lambda tup: tup[1] + tup[2])
-    return dist1 + dist2
+    return min(dist1 + dist2 for _, dist1, dist2 in intersections)

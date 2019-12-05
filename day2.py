@@ -3,51 +3,34 @@ AdventOfCode2019 - Day 2
 """
 
 
-class UnknownOpcodeException(Exception):
+def interpret(opcodes, noun, verb):
     """
-    Exception class for an unknown opcode given to an Intcode interpretor.
+    Run a list of opcodes.
     """
+    memory = opcodes.copy()
+    memory[1] = noun
+    memory[2] = verb
+    ipointer = 0
 
+    def bin_op(op):
+        lhs_ptr = memory[ipointer + 1]
+        rhs_ptr = memory[ipointer + 2]
+        out_ptr = memory[ipointer + 3]
+        memory[out_ptr] = op(memory[lhs_ptr], memory[rhs_ptr])
 
-class Interpretor:
-    """
-    An Intcode interpretor.
-    """
+    while True:
+        opcode = memory[ipointer]
+        if opcode == 1:
+            bin_op(lambda a, b: a + b)
+        elif opcode == 2:
+            bin_op(lambda a, b: a * b)
+        elif opcode == 99:
+            break
+        else:
+            raise ValueError
+        ipointer = ipointer + 4
 
-    def __init__(self):
-        self.memory = []
-
-    def bin_op(self, index, func):
-        """
-        Perform a binary operation reading locations from the index.
-        """
-        lhs_read = self.memory[index + 1]
-        rhs_read = self.memory[index + 2]
-        out = self.memory[index + 3]
-        self.memory[out] = func(self.memory[lhs_read], self.memory[rhs_read])
-
-    def run(self, opcodes, noun, verb):
-        """
-        Run a list of opcodes.
-        """
-        self.memory = opcodes.copy()
-        self.memory[1] = noun
-        self.memory[2] = verb
-
-        ipointer = 0
-        while True:
-            opcode = self.memory[ipointer]
-            if opcode == 1:
-                self.bin_op(ipointer, lambda a, b: a + b)
-            elif opcode == 2:
-                self.bin_op(ipointer, lambda a, b: a * b)
-            elif opcode == 99:
-                break
-            else:
-                raise UnknownOpcodeException
-            ipointer = ipointer + 4
-
-        return self.memory[0]
+    return memory[0]
 
 
 def parse(puzzle_input):
@@ -61,33 +44,21 @@ def part1(opcodes):
     """
     Solve for the answer to part 1.
     """
-    interpretor = Interpretor()
-    return interpretor.run(opcodes, 12, 2)
+    return interpret(opcodes, 12, 2)
 
 
 def part2(opcodes):
     """
     Solve for the answer to part 2.
     """
-    interpretor = Interpretor()
 
     def program(noun, verb):
-        return interpretor.run(opcodes, noun, verb)
+        return interpret(opcodes, noun, verb)
 
     # assume program is linear
     constant_term = program(0, 0)
     noun_term = program(1, 0) - constant_term
     verb_term = program(0, 1) - constant_term
-
-    if verb_term != 1:
-        print("WARNING: verb coefficient is non-unit")
-
-    def program_native(noun, verb):
-        return constant_term + noun_term * noun + verb_term * verb
-
-    for noun, verb in zip(range(0, 5), range(0, 5)):
-        if program(noun, verb) != program_native(noun, verb):
-            print("WARNING: program is not linear")
 
     desired_output = 19690720
     verbs = [
@@ -96,6 +67,8 @@ def part2(opcodes):
     ]
     verbs = [verb for verb in verbs if verb >= 0]
     noun, verb = len(verbs) - 1, verbs[-1]
+
     if program(noun, verb) != desired_output:
-        print(f"WARNING: minimal solution failed")
+        print(f"WARNING: assumptions failed")
+
     return 100 * noun + verb

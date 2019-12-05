@@ -21,7 +21,7 @@ def iter_chains(values):
 
 def increasing(sequences):
     """
-    Given a sequence of sequences return a list over all the sequences that are increasing.
+    Given a sequence of sequences return a list of all the sequences that are increasing.
     """
     return [
         sequence
