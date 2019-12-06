@@ -3,14 +3,8 @@ General utility functions for all days.
 """
 
 import sys
+import importlib
 import requests
-
-import day1
-import day2
-import day3
-import day4
-import day5
-import day6
 
 
 def get_input(day_number):
@@ -37,7 +31,7 @@ def run_day(day_num):
     Solve and print the answer for a given day.
     """
     puzzle_input = get_input(day_num)
-    day_module = [day1, day2, day3, day4, day5, day6][day_num - 1]
+    day_module = importlib.import_module(f"day{day_num}")
     parsed_input = day_module.parse(puzzle_input)
     part1 = day_module.part1(parsed_input)
     print(f"part1: {part1}")
