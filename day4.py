@@ -19,25 +19,13 @@ def iter_chains(values):
     yield prev, chain
 
 
-def increasing(sequences):
-    """
-    Given a sequence of sequences return a list of all the sequences that are increasing.
-    """
-    return [
-        sequence
-        for sequence in sequences
-        if all(prev <= curr for prev, curr in zip(sequence, sequence[1:]))
-    ]
-
-
 def parse(puzzle_input):
     """
-    Parse the puzzle input into a list of increasing digit lists in the range.
+    Parse the puzzle input into a list of increasing digit passwords in the range.
     """
-    return increasing(
-        [int(c) for c in str(password)]
-        for password in range(*[int(number) for number in puzzle_input.split("-")])
-    )
+    start, end = [int(number) for number in puzzle_input.split("-")]
+    passwords = [str(number) for number in range(start, end)]
+    return [password for password in passwords if sorted(password) == list(password)]
 
 
 def part1(passwords):
