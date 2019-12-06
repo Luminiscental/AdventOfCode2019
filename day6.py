@@ -32,15 +32,6 @@ class Tree:
                 return {"node": found["node"], "steps": 1 + found["steps"]}
         return None
 
-    def find_skipping(self, value, skipped_child):
-        """
-        Check whether a value is contained in the tree discounting one child.
-        """
-        self.children.discard(skipped_child)
-        result = self.find(value)
-        self.children.add(skipped_child)
-        return result
-
     def set_parents(self):
         """
         Set the parent field of all child nodes.
