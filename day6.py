@@ -2,11 +2,7 @@
 AdventOfCode2019 - Day 6
 """
 
-from collections import defaultdict, namedtuple
-
-
-Child = namedtuple("Child", "node down")
-CommonAncestor = namedtuple("CommonAncestor", "node up down")
+from collections import defaultdict
 
 
 class Tree:
@@ -74,7 +70,9 @@ class Tree:
         """
         Create a tree from a dictionary from parent value to child values.
         """
-        return Tree(root, {Tree.from_dict(parent_dict, child) for child in parent_dict[root]})
+        return Tree(
+            root, {Tree.from_dict(parent_dict, child) for child in parent_dict[root]}
+        )
 
 
 def parse(puzzle_input):
