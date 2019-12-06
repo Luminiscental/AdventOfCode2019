@@ -3,7 +3,9 @@ General utility functions for all days.
 """
 
 import sys
+import time
 import importlib
+import contextlib
 import requests
 
 
@@ -26,14 +28,29 @@ def get_input(day_number):
         sys.exit(1)
 
 
+@contextlib.contextmanager
+def timer(desc):
+    """
+    Context manager for timing a block of code once.
+    """
+    start = time.time()
+    yield
+    end = time.time()
+    print(f"{desc}: took {end - start:0.5f} seconds")
+
+
 def run_day(day_num):
     """
     Solve and print the answer for a given day.
     """
     puzzle_input = get_input(day_num)
     day_module = importlib.import_module(f"day{day_num}")
-    parsed_input = day_module.parse(puzzle_input)
-    part1 = day_module.part1(parsed_input)
+    with timer("interpreting input"):
+        parsed_input = day_module.parse(puzzle_input)
+    with timer("running part 1"):
+        part1 = day_module.part1(parsed_input)
+    with timer("running part 2"):
+        part2 = day_module.part2(parsed_input)
+    print()
     print(f"part1: {part1}")
-    part2 = day_module.part2(parsed_input)
     print(f"part2: {part2}")

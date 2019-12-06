@@ -10,16 +10,15 @@ class Tree:
     A tree where nodes can have any number of children.
     """
 
-    def __init__(self, value, children):
+    def __init__(self, value, children, parent=None):
         self.value = value
         self.children = children
-        self.parent = None
+        self.parent = parent
 
     def __iter__(self):
-        for node in self.children:
-            yield node
-            for child in node:
-                yield child
+        for child in self.children:
+            yield child
+            yield from child
 
     def find(self, value):
         """
@@ -70,14 +69,16 @@ class Tree:
         """
         Create a tree from a dictionary from parent value to child values.
         """
-        return Tree(
+        result = Tree(
             root, {Tree.from_dict(parent_dict, child) for child in parent_dict[root]}
         )
+        result.set_parents()
+        return result
 
 
 def parse(puzzle_input):
     """
-    Parse the puzzle input into a dictionary of parent to children in the tree.
+    Parse the puzzle input into a tree.
     """
     parent_dict = defaultdict(set)
     for line in puzzle_input.splitlines():
@@ -85,9 +86,7 @@ def parse(puzzle_input):
         orbited = system[0]
         orbitor = system[1]
         parent_dict[orbited].add(orbitor)
-    tree = Tree.from_dict(parent_dict, "COM")
-    tree.set_parents()
-    return tree
+    return Tree.from_dict(parent_dict, "COM")
 
 
 def part1(tree):
