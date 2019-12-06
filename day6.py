@@ -73,9 +73,7 @@ def parse(puzzle_input):
     """
     parent_dict = defaultdict(set)
     for line in puzzle_input.splitlines():
-        system = line.split(")")
-        orbited = system[0]
-        orbitor = system[1]
+        orbited, orbitor = line.split(")")
         parent_dict[orbited].add(orbitor)
     return parent_dict
 
@@ -86,6 +84,7 @@ def part1(parent_dict):
     """
 
     def count_paths(parent):
+        # using sum() is noticeably slower than this for loop
         result = 0
         for child in parent_dict[parent]:
             result += 1 + count_paths(child)
