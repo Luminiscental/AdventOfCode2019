@@ -78,7 +78,7 @@ class Tree:
 
 def parse(puzzle_input):
     """
-    Parse the puzzle input into a tree.
+    Parse the puzzle input into a dictionary of nodes to children.
     """
     parent_dict = defaultdict(set)
     for line in puzzle_input.splitlines():
@@ -86,21 +86,28 @@ def parse(puzzle_input):
         orbited = system[0]
         orbitor = system[1]
         parent_dict[orbited].add(orbitor)
-    return Tree.from_dict(parent_dict, "COM")
+    return parent_dict
 
 
-def part1(tree):
+def part1(parent_dict):
     """
     Solve for the answer to part 1.
     """
-    # Slow recursive iteration, not sure how to improve
-    return sum(1 + sum(1 for _ in node) for node in tree)
+
+    def count_paths(parent):
+        result = 0
+        for child in parent_dict[parent]:
+            result += 1 + count_paths(child)
+        return result
+
+    return sum(map(count_paths, list(parent_dict.keys())))
 
 
-def part2(tree):
+def part2(parent_dict):
     """
     Solve for the answer to part 2.
     """
+    tree = Tree.from_dict(parent_dict, "COM")
     found = tree.find("YOU")
     if found is None:
         raise ValueError("Input didn't contain a YOU node")
