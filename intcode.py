@@ -8,6 +8,12 @@ from enum import Enum
 # action is a function which takes the arguments and returns whether a jump occured
 Opcode = namedtuple("Opcode", "arg_count action")
 
+JUMP = True
+NO_JUMP = not JUMP
+
+REF_MODE = 0
+IMMEDIATE_MODE = 1
+
 
 class RunState(Enum):
     """
@@ -47,57 +53,57 @@ class Interpretor:
 
     def _add(self, arg1, arg2, arg3):
         self._set(arg3, self._get(arg1) + self._get(arg2))
-        return False
+        return NO_JUMP
 
     def _mul(self, arg1, arg2, arg3):
         self._set(arg3, self._get(arg1) * self._get(arg2))
-        return False
+        return NO_JUMP
 
     def _get_input(self, arg1):
         self.state = RunState.WAITING_INPUT
         self.input_loc = arg1
         if self.input_queue:
             self.receive_input(self.input_queue.pop(0))
-        return False
+        return NO_JUMP
 
     def _put_output(self, arg1):
         self.state = RunState.GIVING_OUTPUT
         self.output_loc = arg1
-        return False
+        return NO_JUMP
 
     def _jump_if_true(self, arg1, arg2):
         if self._get(arg1) != 0:
             self.ipointer = self._get(arg2)
-            return True
-        return False
+            return JUMP
+        return NO_JUMP
 
     def _jump_if_false(self, arg1, arg2):
         if self._get(arg1) == 0:
             self.ipointer = self._get(arg2)
-            return True
-        return False
+            return JUMP
+        return NO_JUMP
 
     def _less(self, arg1, arg2, arg3):
         self._set(arg3, int(self._get(arg1) < self._get(arg2)))
-        return False
+        return NO_JUMP
 
     def _equals(self, arg1, arg2, arg3):
         self._set(arg3, int(self._get(arg1) == self._get(arg2)))
-        return False
+        return NO_JUMP
 
     def _get(self, arg):
         mode, idx = arg
-        if mode == 0:
+        if mode == REF_MODE:
             return self.memory[idx]
-        if mode == 1:
+        if mode == IMMEDIATE_MODE:
             return idx
         raise ValueError("Unknown parameter mode " + str(mode))
 
     def _set(self, arg, value):
         mode, idx = arg
-        if mode == 0:
+        if mode == REF_MODE:
             self.memory[idx] = value
-        elif mode == 1:
+        elif mode == IMMEDIATE_MODE:
             raise ValueError("Cannot write in immediate mode")
         else:
             raise ValueError("Unknown parameter mode " + str(mode))
@@ -108,8 +114,12 @@ class Interpretor:
         """
         assert self.state == RunState.GIVING_OUTPUT
         assert self.output_loc is not None
+
+        result = self._get(self.output_loc)
+
+        self.output_loc = None
         self.state = RunState.RUNNING
-        return self._get(self.output_loc)
+        return result
 
     def queue_input(self, value):
         """
@@ -123,7 +133,10 @@ class Interpretor:
         """
         assert self.state == RunState.WAITING_INPUT
         assert self.input_loc is not None
+
         self._set(self.input_loc, input_value)
+
+        self.input_loc = None
         self.state = RunState.RUNNING
 
     def _step(self):
