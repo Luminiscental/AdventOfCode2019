@@ -1,5 +1,5 @@
 """
-Modulee for the Intcode interpretor.
+Module for the Intcode interpretor.
 """
 
 from collections import namedtuple
