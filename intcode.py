@@ -137,6 +137,7 @@ class Interpretor:
         """
         Run a list of opcodes.
         """
+        self.ipointer = 0
         self.memory = opcodes.copy()
         while self.step():
             pass
