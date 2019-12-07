@@ -14,6 +14,9 @@ NO_JUMP = not JUMP
 REF_MODE = 0
 IMMEDIATE_MODE = 1
 
+CONTINUE = True
+HALT = not CONTINUE
+
 
 class RunState(Enum):
     """
@@ -145,12 +148,12 @@ class Interpretor:
         opcode_value = int(instruction[-2:])
         param_modes = list(reversed([int(mode) for mode in instruction[:-2]]))
         if opcode_value == 99:
-            return False
+            return HALT
         opcode = self.opcodes[opcode_value]
         param_modes = param_modes + [0] * (opcode.arg_count - len(param_modes))
-        if not opcode.action(*list(zip(param_modes, args))):
+        if opcode.action(*list(zip(param_modes, args))) == NO_JUMP:
             self.ipointer = self.ipointer + opcode.arg_count + 1
-        return True
+        return CONTINUE
 
     def run(self, opcodes):
         """
@@ -174,9 +177,9 @@ class Interpretor:
         self.state = RunState.RUNNING
         while self._step():
             if self.state != RunState.RUNNING:
-                return True
+                return CONTINUE
         self.state = RunState.IDLE
-        return False
+        return HALT
 
     def reset(self):
         """
