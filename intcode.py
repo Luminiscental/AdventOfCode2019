@@ -30,6 +30,7 @@ class Interpretor:
         self.ipointer = 0
         self.state = RunState.IDLE
 
+        self.input_queue = []
         self.input_loc = None
         self.output_loc = None
 
@@ -55,6 +56,8 @@ class Interpretor:
     def _get_input(self, arg1):
         self.state = RunState.WAITING_INPUT
         self.input_loc = arg1
+        if self.input_queue:
+            self.receive_input(self.input_queue.pop(0))
         return False
 
     def _put_output(self, arg1):
@@ -108,6 +111,12 @@ class Interpretor:
         self.state = RunState.RUNNING
         return self._get(self.output_loc)
 
+    def queue_input(self, value):
+        """
+        Queue a value to give as input automatically.
+        """
+        self.input_queue.append(value)
+
     def receive_input(self, input_value):
         """
         Send input to the interpretor when it is in the relevant state.
@@ -155,3 +164,11 @@ class Interpretor:
                 return True
         self.state = RunState.IDLE
         return False
+
+    def reset(self):
+        """
+        Reset the interpretor to an idle state.
+        """
+        self.state = RunState.IDLE
+        self.ipointer = 0
+        self.memory = []

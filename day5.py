@@ -15,30 +15,36 @@ def parse(puzzle_input):
 
 def collect_outputs(program, input_constant):
     """
-    Collect the outputs of a program, giving a constant value on any input call.
+    Collect the outputs of a program, giving a constant value on the first input call.
     """
     outputs = []
     interpretor = intcode.Interpretor()
+    interpretor.queue_input(input_constant)
     while interpretor.run(program):
-        if interpretor.state == intcode.RunState.WAITING_INPUT:
-            interpretor.receive_input(input_constant)
-        elif interpretor.state == intcode.RunState.GIVING_OUTPUT:
+        if interpretor.state == intcode.RunState.GIVING_OUTPUT:
             outputs.append(interpretor.query_output())
     return outputs
+
+
+def run_tests(program, input_constant):
+    """
+    Run the tests giving a certain input.
+    """
+    outputs = collect_outputs(program, input_constant)
+    if any(output != 0 for output in outputs[:-1]):
+        print(f"WARNING: test failed")
+    return outputs[-1]
 
 
 def part1(opcodes):
     """
     Solve for the answer to part 1.
     """
-    outputs = collect_outputs(opcodes, 1)
-    if any(output != 0 for output in outputs[:-1]):
-        print(f"WARNING: test failed")
-    return outputs[-1]
+    return run_tests(opcodes, input_constant=1)
 
 
 def part2(opcodes):
     """
     Solve for the answer to part 2.
     """
-    return collect_outputs(opcodes, 5)[-1]
+    return run_tests(opcodes, input_constant=5)
