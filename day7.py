@@ -31,6 +31,7 @@ def pipeline(program, amplifiers, phase_settings, loop=False):
             curr += 1
             if loop:
                 curr = curr % len(amplifiers)
+    # we exit early (between output and halting) so reset manually
     for amplifier in amplifiers:
         amplifier.reset()
     return signal
