@@ -48,6 +48,7 @@ class Tree:
         ancestor = self
         steps_up = 0
         while ancestor is not None:
+            # double checks ancestor each time, could improve
             found = ancestor.find(other_value)
             if found is not None:
                 return {"node": found["node"], "up": steps_up, "down": found["steps"]}

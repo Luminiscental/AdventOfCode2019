@@ -52,5 +52,5 @@ def run_day(day_num):
     with timer("running part 2"):
         part2 = day_module.part2(parsed_input)
     print()
-    print(f"part1: {part1}")
-    print(f"part2: {part2}")
+    print(f"part1:\n\n{part1}\n")
+    print(f"part2:\n\n{part2}\n")
