@@ -9,7 +9,7 @@ BLACK, WHITE, TRANSPARENT = 0, 1, 2
 
 def chunks_of(size, iterable):
     """
-    Iterate in chunks of a given size.
+    Split into a list of lists of the given size.
     """
     args = [iter(iterable)] * size
     return [list(chunk) for chunk in zip(*args)]
