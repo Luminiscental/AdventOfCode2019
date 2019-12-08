@@ -47,6 +47,6 @@ def part2(layers):
     """
     final_image = [0] * WIDTH * HEIGHT
     for i in range(WIDTH * HEIGHT):
-        pixels = [layer[i] for layer in layers]
+        pixels = (layer[i] for layer in layers)
         final_image[i] = next(pixel for pixel in pixels if pixel != TRANSPARENT)
     return display_image(final_image)
