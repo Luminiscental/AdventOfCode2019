@@ -2,8 +2,9 @@
 AdventOfCode2019 - Day 8
 """
 
-WIDTH = 25
-HEIGHT = 6
+WIDTH, HEIGHT = 25, 6
+
+BLACK, WHITE, TRANSPARENT = 0, 1, 2
 
 
 def chunks_of(size, iterable):
@@ -19,18 +20,17 @@ def display_image(image):
     Return a human readable string to display the binary image.
     """
     return "\n".join(
-        "".join("#" if pixel else " " for pixel in row)
+        "".join("#" if pixel == WHITE else " " for pixel in row)
         for row in chunks_of(WIDTH, image)
     )
 
 
 def parse(puzzle_input):
     """
-    Parse the puzzle input.
+    Parse the puzzle input into layers.
     """
     pixels = [int(c) for c in puzzle_input if c != "\n"]
-    layers = chunks_of(WIDTH * HEIGHT, pixels)
-    return list(reversed(layers))
+    return chunks_of(WIDTH * HEIGHT, pixels)
 
 
 def part1(layers):
@@ -45,11 +45,8 @@ def part2(layers):
     """
     Solve for the answer to part 2.
     """
-    final_image = layers[-1]
-    for y in range(HEIGHT):
-        for x in range(WIDTH):
-            idx = -2
-            while final_image[x + y * WIDTH] == 2:
-                final_image[x + y * WIDTH] = layers[idx][x + y * WIDTH]
-                idx -= 1
+    final_image = [0] * WIDTH * HEIGHT
+    for i in range(WIDTH * HEIGHT):
+        pixels = [layer[i] for layer in layers]
+        final_image[i] = next(pixel for pixel in pixels if pixel != TRANSPARENT)
     return display_image(final_image)
