@@ -159,15 +159,19 @@ class Interpretor:
         self.state = RunState.RUNNING
 
     def _step(self):
-        instruction = str(self.memory[self.ipointer])
-        args = self.memory[self.ipointer + 1 :]
-        opcode_value = int(instruction[-2:])
-        param_modes = list(reversed([int(mode) for mode in instruction[:-2]]))
+        instruction = self.memory[self.ipointer]
+        opcode_value = instruction % 100
         if opcode_value == 99:
             return HALT
         opcode = self.opcodes[opcode_value]
-        param_modes = param_modes + [0] * (opcode.arg_count - len(param_modes))
-        if opcode.action(*list(zip(param_modes, args))) == NO_JUMP:
+        param_modes = instruction // 100
+        arg_start = self.ipointer + 1
+        raw_args = self.memory[arg_start : arg_start + opcode.arg_count + 1]
+        args = [
+            ((param_modes // 10 ** n) % 10, raw_args[n])
+            for n in range(opcode.arg_count)
+        ]
+        if opcode.action(*args) == NO_JUMP:
             self.ipointer = self.ipointer + opcode.arg_count + 1
         return CONTINUE
 
