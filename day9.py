@@ -11,21 +11,25 @@ def part1(boost_program):
     """
     Solve for the answer to part 1.
     """
-    interpretor = intcode.Interpretor(collect_outputs=True)
+    outputs = []
+    interpretor = intcode.Interpretor()
+    interpretor.queue_input(1)
     while interpretor.run(boost_program):
-        if interpretor.state == intcode.RunState.WAITING_INPUT:
-            interpretor.receive_input(1)
-    if len(interpretor.outputs) > 1:
-        print(f"WARNING: got {len(interpretor.outputs) - 1} errors")
-    return interpretor.outputs[-1]
+        if interpretor.giving_output():
+            outputs.append(interpretor.query_output())
+    if len(outputs) > 1:
+        print(f"WARNING: got {len(outputs) - 1} errors")
+    return outputs[-1]
 
 
 def part2(boost_program):
     """
     Solve for the answer to part 2.
     """
-    interpretor = intcode.Interpretor(collect_outputs=True)
+    outputs = []
+    interpretor = intcode.Interpretor()
+    interpretor.queue_input(2)
     while interpretor.run(boost_program):
-        if interpretor.state == intcode.RunState.WAITING_INPUT:
-            interpretor.receive_input(2)
-    return interpretor.outputs[-1]
+        if interpretor.giving_output():
+            outputs.append(interpretor.query_output())
+    return outputs[-1]

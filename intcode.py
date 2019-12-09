@@ -35,15 +35,11 @@ class Interpretor:
     An intcode interpretor.
     """
 
-    def __init__(self, collect_outputs=False):
+    def __init__(self):
         self.memory = []
         self.ipointer = 0
         self.rel_base = 0
         self.state = RunState.IDLE
-
-        self.outputs = []
-        self.collect_outputs = collect_outputs
-
         self.input_queue = []
         self.input_loc = None
         self.output_loc = None
@@ -78,8 +74,6 @@ class Interpretor:
     def _put_output(self, arg1):
         self.state = RunState.GIVING_OUTPUT
         self.output_loc = arg1
-        if self.collect_outputs:
-            self.outputs.append(self.query_output())
         return NO_JUMP
 
     def _jump_if_true(self, arg1, arg2):
@@ -131,6 +125,12 @@ class Interpretor:
         else:
             raise ValueError("Unknown parameter mode " + str(mode))
 
+    def giving_output(self):
+        """
+        Check if the interpretor is giving output.
+        """
+        return self.state == RunState.GIVING_OUTPUT
+
     def query_output(self):
         """
         Extract the output from the interpretor when it is in the relevant state.
@@ -143,6 +143,12 @@ class Interpretor:
         self.output_loc = None
         self.state = RunState.RUNNING
         return result
+
+    def waiting_input(self):
+        """
+        Check if the interpretor is waiting for input.
+        """
+        return self.state == RunState.WAITING_INPUT
 
     def queue_input(self, value):
         """
@@ -164,19 +170,22 @@ class Interpretor:
 
     def _step(self):
         instruction = self.memory[self.ipointer]
-        opcode_value = instruction % 100
-        if opcode_value == 99:
+
+        opcode_idx = instruction % 100
+        mode_section = instruction // 100
+
+        if opcode_idx == 99:
             return HALT
-        opcode = self.opcodes[opcode_value]
-        param_modes = instruction // 100
+
+        opcode = self.opcodes[opcode_idx]
+
         arg_start = self.ipointer + 1
-        raw_args = self.memory[arg_start : arg_start + opcode.arg_count + 1]
-        args = [
-            ((param_modes // 10 ** n) % 10, raw_args[n])
-            for n in range(opcode.arg_count)
-        ]
-        if opcode.action(*args) == NO_JUMP:
+        args = self.memory[arg_start : arg_start + opcode.arg_count + 1]
+        param_modes = [(mode_section // 10 ** n) % 10 for n in range(opcode.arg_count)]
+
+        if opcode.action(*zip(param_modes, args)) == NO_JUMP:
             self.ipointer = self.ipointer + opcode.arg_count + 1
+
         return CONTINUE
 
     def run(self, opcodes):

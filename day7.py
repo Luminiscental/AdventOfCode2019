@@ -19,9 +19,9 @@ def pipeline(program, amplifiers, phase_settings, loop=False):
     signal = 0
     curr = 0
     while curr < len(amplifiers) and amplifiers[curr].run(program):
-        if amplifiers[curr].state == intcode.RunState.WAITING_INPUT:
+        if amplifiers[curr].waiting_input():
             amplifiers[curr].receive_input(signal)
-        elif amplifiers[curr].state == intcode.RunState.GIVING_OUTPUT:
+        elif amplifiers[curr].giving_output():
             signal = amplifiers[curr].query_output()
             curr += 1
             if loop:
