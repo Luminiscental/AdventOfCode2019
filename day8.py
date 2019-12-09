@@ -20,7 +20,7 @@ def display_image(image):
     Return a human readable string to display the binary image.
     """
     return "\n".join(
-        "".join("#" if pixel == WHITE else " " for pixel in row)
+        "".join("█" if pixel == WHITE else " " for pixel in row)
         for row in chunks_of(WIDTH, image)
     )
 
