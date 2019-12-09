@@ -119,10 +119,14 @@ class Interpretor:
     def _set(self, arg, value):
         mode, idx = arg
         if mode == REFERENCE_MODE:
+            if idx >= len(self.memory):
+                self.memory += [0] * idx
             self.memory[idx] = value
         elif mode == IMMEDIATE_MODE:
             raise ValueError("Cannot write in immediate mode")
         elif mode == RELATIVE_MODE:
+            if self.rel_base + idx >= len(self.memory):
+                self.memory += [0] * (self.rel_base + idx)
             self.memory[self.rel_base + idx] = value
         else:
             raise ValueError("Unknown parameter mode " + str(mode))
@@ -194,7 +198,6 @@ class Interpretor:
         if self.state == RunState.IDLE:
             self.ipointer = 0
             self.memory = opcodes.copy()
-            self.memory += [0] * len(opcodes) * 10
         self.state = RunState.RUNNING
         while self._step():
             if self.state != RunState.RUNNING:
