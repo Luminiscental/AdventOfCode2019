@@ -5,25 +5,18 @@ AdventOfCode2019 - Day 5
 
 import intcode
 
-
-def parse(puzzle_input):
-    """
-    Parse the input into a list of opcodes.
-    """
-    return [int(number) for number in puzzle_input.split(",")]
+from day2 import parse
 
 
 def collect_outputs(program, input_constant):
     """
     Collect the outputs of a program, giving a constant value on the first input call.
     """
-    outputs = []
-    interpretor = intcode.Interpretor()
+    interpretor = intcode.Interpretor(collect_outputs=True)
     interpretor.queue_input(input_constant)
-    while interpretor.run(program):
-        if interpretor.state == intcode.RunState.GIVING_OUTPUT:
-            outputs.append(interpretor.query_output())
-    return outputs
+    # All io is queued so no need to loop
+    interpretor.run(program)
+    return interpretor.outputs
 
 
 def run_tests(program, input_constant):

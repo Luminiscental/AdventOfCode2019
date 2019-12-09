@@ -11,8 +11,9 @@ Opcode = namedtuple("Opcode", "arg_count action")
 JUMP = True
 NO_JUMP = not JUMP
 
-REF_MODE = 0
+REFERENCE_MODE = 0
 IMMEDIATE_MODE = 1
+RELATIVE_MODE = 2
 
 CONTINUE = True
 HALT = not CONTINUE
@@ -34,10 +35,14 @@ class Interpretor:
     An intcode interpretor.
     """
 
-    def __init__(self):
+    def __init__(self, collect_outputs=False):
         self.memory = []
         self.ipointer = 0
+        self.rel_base = 0
         self.state = RunState.IDLE
+
+        self.outputs = []
+        self.collect_outputs = collect_outputs
 
         self.input_queue = []
         self.input_loc = None
@@ -52,6 +57,7 @@ class Interpretor:
             6: Opcode(arg_count=2, action=self._jump_if_false),
             7: Opcode(arg_count=3, action=self._less),
             8: Opcode(arg_count=3, action=self._equals),
+            9: Opcode(arg_count=1, action=self._shift_rel_base),
         }
 
     def _add(self, arg1, arg2, arg3):
@@ -72,6 +78,8 @@ class Interpretor:
     def _put_output(self, arg1):
         self.state = RunState.GIVING_OUTPUT
         self.output_loc = arg1
+        if self.collect_outputs:
+            self.outputs.append(self.query_output())
         return NO_JUMP
 
     def _jump_if_true(self, arg1, arg2):
@@ -94,20 +102,28 @@ class Interpretor:
         self._set(arg3, int(self._get(arg1) == self._get(arg2)))
         return NO_JUMP
 
+    def _shift_rel_base(self, arg1):
+        self.rel_base += self._get(arg1)
+        return NO_JUMP
+
     def _get(self, arg):
         mode, idx = arg
-        if mode == REF_MODE:
+        if mode == REFERENCE_MODE:
             return self.memory[idx]
         if mode == IMMEDIATE_MODE:
             return idx
+        if mode == RELATIVE_MODE:
+            return self.memory[self.rel_base + idx]
         raise ValueError("Unknown parameter mode " + str(mode))
 
     def _set(self, arg, value):
         mode, idx = arg
-        if mode == REF_MODE:
+        if mode == REFERENCE_MODE:
             self.memory[idx] = value
         elif mode == IMMEDIATE_MODE:
             raise ValueError("Cannot write in immediate mode")
+        elif mode == RELATIVE_MODE:
+            self.memory[self.rel_base + idx] = value
         else:
             raise ValueError("Unknown parameter mode " + str(mode))
 
@@ -174,6 +190,7 @@ class Interpretor:
         if self.state == RunState.IDLE:
             self.ipointer = 0
             self.memory = opcodes.copy()
+            self.memory += [0] * len(opcodes) * 10
         self.state = RunState.RUNNING
         while self._step():
             if self.state != RunState.RUNNING:

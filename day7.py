@@ -5,12 +5,7 @@ AdventOfCode2019 - Day 7
 import itertools
 import intcode
 
-
-def parse(puzzle_input):
-    """
-    Parse the puzzle input into a list of opcodes.
-    """
-    return [int(number) for number in puzzle_input.split(",")]
+from day2 import parse
 
 
 def pipeline(program, amplifiers, phase_settings, loop=False):
