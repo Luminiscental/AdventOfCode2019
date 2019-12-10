@@ -4,6 +4,9 @@ AdventOfCode2019 - Day 10
 from collections import namedtuple
 import math
 
+# part1 returns a tuple of the actual answer and info to pass to part2
+PIPE_ANSWER = True
+
 AsteroidField = namedtuple("AsteroidField", "width height asteroids")
 
 
@@ -16,9 +19,7 @@ def get_directions(width, height, order_cw=False):
         for x_step in range(1 - width, width)
         if x_step < width
         for y_step in range(1 - height, height)
-        if y_step < height
-        and (x_step, y_step) != (0, 0)
-        and math.gcd(x_step, y_step) == 1
+        if y_step < height and math.gcd(x_step, y_step) == 1
     ]
     if order_cw:
         result.sort(key=lambda direction: math.atan2(direction[1], direction[0]))
@@ -74,13 +75,6 @@ def part1(field):
     }
     best_loc = max(loc_info.keys(), key=loc_info.__getitem__)
     return loc_info[best_loc], best_loc
-
-
-def pipe_answer(part1_answer):
-    """
-    Return the actual answer to part1 and the info passed onto part2.
-    """
-    return part1_answer
 
 
 def part2(field, part1_loc):
