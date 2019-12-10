@@ -3,6 +3,7 @@ AdventOfCode2019 - Day 10
 """
 from collections import namedtuple
 import math
+import operator
 
 # part1 returns a tuple of the actual answer and info to pass to part2
 PIPE_ANSWER = True
@@ -21,6 +22,7 @@ def get_directions(width, height, order_cw=False):
         if math.gcd(x_step, y_step) == 1
     ]
     if order_cw:
+        # upside down coordinates so atan2 actually goes clockwise
         result.sort(key=lambda direction: math.atan2(direction[1], direction[0]))
     return result
 
@@ -71,16 +73,15 @@ def part1(field):
         (x, y): count_visible(field, (x, y), directions)
         for x in range(field.width)
         for y in range(field.height)
+        if (x, y) in field.asteroids
     }
-    best_loc = max(loc_info.keys(), key=loc_info.__getitem__)
-    return loc_info[best_loc], best_loc
+    return reversed(max(loc_info.items(), key=operator.itemgetter(1)))
 
 
 def part2(field, part1_loc):
     """
     Solve for the answer to part 2.
     """
-    # TODO: Works perfectly with test case but fails on actual input???
     directions = get_directions(field.width, field.height, order_cw=True)
     dir_idx = directions.index((0, -1))
     destroyed = 0
@@ -88,7 +89,6 @@ def part2(field, part1_loc):
         loc = raycast(field, part1_loc, directions[dir_idx])
         if loc is not None:
             destroyed += 1
-            print(f"destroyed asteroid {destroyed} at {loc}")
             field.asteroids.discard(loc)
         dir_idx = (dir_idx + 1) % len(directions)
     return 100 * loc[0] + loc[1]
