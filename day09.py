@@ -4,7 +4,7 @@ AdventOfCode2019 - Day 9
 
 import intcode
 
-from day2 import parse
+from day02 import parse
 
 
 def part1(boost_program):

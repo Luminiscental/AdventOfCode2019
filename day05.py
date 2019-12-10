@@ -5,7 +5,7 @@ AdventOfCode2019 - Day 5
 
 import intcode
 
-from day2 import parse
+from day02 import parse
 
 
 def collect_outputs(program, input_constant):

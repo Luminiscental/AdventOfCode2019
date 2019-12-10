@@ -5,7 +5,7 @@ AdventOfCode2019 - Day 7
 import itertools
 import intcode
 
-from day2 import parse
+from day02 import parse
 
 
 def pipeline(program, amplifiers, phase_settings, loop=False):

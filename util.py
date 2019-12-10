@@ -53,7 +53,7 @@ def run_day(day_num):
     Solve and print the answer for a given day.
     """
     puzzle_input = get_input(day_num)
-    day_module = importlib.import_module(f"day{day_num}")
+    day_module = importlib.import_module(f"day{day_num:02}")
     day_state = {}
     with timer("interpreting input"):
         parsed_input = apply_trim_args(day_module.parse, puzzle_input, day_state)
