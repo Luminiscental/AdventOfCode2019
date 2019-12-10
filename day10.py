@@ -67,10 +67,8 @@ def part1(field, state):
     """
     directions = get_directions(field.width, field.height)
     loc_info = {
-        (x, y): count_visible(field, (x, y), directions)
-        for x in range(field.width)
-        for y in range(field.height)
-        if (x, y) in field.asteroids
+        asteroid: count_visible(field, asteroid, directions)
+        for asteroid in field.asteroids
     }
     station_loc, visible_count = max(loc_info.items(), key=operator.itemgetter(1))
     state["station"] = station_loc
