@@ -5,9 +5,6 @@ from collections import namedtuple
 import math
 import operator
 
-# part1 returns a tuple of the actual answer and info to pass to part2
-PIPE_ANSWER = True
-
 AsteroidField = namedtuple("AsteroidField", "width height asteroids")
 
 
@@ -64,7 +61,7 @@ def parse(puzzle_input):
     )
 
 
-def part1(field):
+def part1(field, state):
     """
     Solve for the answer to part 1.
     """
@@ -75,18 +72,21 @@ def part1(field):
         for y in range(field.height)
         if (x, y) in field.asteroids
     }
-    return reversed(max(loc_info.items(), key=operator.itemgetter(1)))
+    station_loc, visible_count = max(loc_info.items(), key=operator.itemgetter(1))
+    state["station"] = station_loc
+    return visible_count
 
 
-def part2(field, part1_loc):
+def part2(field, state):
     """
     Solve for the answer to part 2.
     """
+    station_loc = state["station"]
     directions = get_directions(field.width, field.height, order_cw=True)
     dir_idx = directions.index((0, -1))
     destroyed = 0
     while destroyed < 200:
-        loc = raycast(field, part1_loc, directions[dir_idx])
+        loc = raycast(field, station_loc, directions[dir_idx])
         if loc is not None:
             destroyed += 1
             field.asteroids.discard(loc)
