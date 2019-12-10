@@ -49,8 +49,13 @@ def run_day(day_num):
         parsed_input = day_module.parse(puzzle_input)
     with timer("running part 1"):
         part1 = day_module.part1(parsed_input)
+        if "pipe_answer" in day_module.__dict__:
+            part1, piped = day_module.pipe_answer(part1)
     with timer("running part 2"):
-        part2 = day_module.part2(parsed_input)
+        if "pipe_answer" in day_module.__dict__:
+            part2 = day_module.part2(parsed_input, piped)
+        else:
+            part2 = day_module.part2(parsed_input)
     print()
     print(f"part1:\n\n{part1}\n")
     print(f"part2:\n\n{part2}\n")
