@@ -17,9 +17,8 @@ def get_directions(width, height, order_cw=False):
     result = [
         (x_step, y_step)
         for x_step in range(1 - width, width)
-        if x_step < width
         for y_step in range(1 - height, height)
-        if y_step < height and math.gcd(x_step, y_step) == 1
+        if math.gcd(x_step, y_step) == 1
     ]
     if order_cw:
         result.sort(key=lambda direction: math.atan2(direction[1], direction[0]))
@@ -89,6 +88,7 @@ def part2(field, part1_loc):
         loc = raycast(field, part1_loc, directions[dir_idx])
         if loc is not None:
             destroyed += 1
+            print(f"destroyed asteroid {destroyed} at {loc}")
             field.asteroids.discard(loc)
         dir_idx = (dir_idx + 1) % len(directions)
     return 100 * loc[0] + loc[1]
