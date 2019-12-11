@@ -19,6 +19,42 @@ CONTINUE = True
 HALT = not CONTINUE
 
 
+class Memory:
+    """
+    Memory for an intcode interpretor.
+    """
+
+    def __init__(self):
+        self.arr = []
+
+    def _extend(self, idx):
+        if isinstance(idx, slice):
+            end = idx.stop
+        else:
+            end = idx + 1
+        self.arr += [0] * (end - len(self.arr))
+
+    def __getitem__(self, idx):
+        self._extend(idx)
+        return self.arr.__getitem__(idx)
+
+    def __setitem__(self, idx, value):
+        self._extend(idx)
+        return self.arr.__setitem__(idx, value)
+
+    def load(self, opcodes):
+        """
+        Load a program into memory.
+        """
+        self.arr = opcodes.copy()
+
+    def reset(self):
+        """
+        Reset memory to default state.
+        """
+        self.arr = []
+
+
 class RunState(Enum):
     """
     State enum for the interpretor.
@@ -36,7 +72,7 @@ class Interpretor:
     """
 
     def __init__(self):
-        self.memory = []
+        self.memory = Memory()
         self.ipointer = 0
         self.rel_base = 0
         self.state = RunState.IDLE
@@ -113,14 +149,10 @@ class Interpretor:
     def _set(self, arg, value):
         mode, idx = arg
         if mode == REFERENCE_MODE:
-            if idx >= len(self.memory):
-                self.memory += [0] * idx
             self.memory[idx] = value
         elif mode == IMMEDIATE_MODE:
             raise ValueError("Cannot write in immediate mode")
         elif mode == RELATIVE_MODE:
-            if self.rel_base + idx >= len(self.memory):
-                self.memory += [0] * (self.rel_base + idx)
             self.memory[self.rel_base + idx] = value
         else:
             raise ValueError("Unknown parameter mode " + str(mode))
@@ -206,7 +238,7 @@ class Interpretor:
         """
         if self.state == RunState.IDLE:
             self.ipointer = 0
-            self.memory = opcodes.copy()
+            self.memory.load(opcodes)
         self.state = RunState.RUNNING
         while self._step():
             if self.state != RunState.RUNNING:
@@ -220,4 +252,4 @@ class Interpretor:
         """
         self.state = RunState.IDLE
         self.ipointer = 0
-        self.memory = []
+        self.memory.reset()
