@@ -2,6 +2,7 @@
 AdventOfCode2019 - Day 11
 """
 
+import operator
 import intcode
 
 from day02 import parse
@@ -73,19 +74,37 @@ class Robot:
                     self.paint(color)
                     self.turn(direction)
 
+    def display_panels(self):
+        """
+        Return a string representation of the painted panels.
+        """
+        minx = min(x for x, y in self.panels)
+        maxx = max(x for x, y in self.panels)
+        miny = min(y for x, y in self.panels)
+        maxy = max(y for x, y in self.panels)
+        return "\n".join(
+            "".join(
+                "█" if (panel_x, panel_y) in self.panels else " "
+                for panel_x in range(minx, maxx + 1)
+            )
+            for panel_y in range(miny, maxy + 1)
+        )
 
-def part1(program, state):
+
+def part1(program):
     """
     Solve for the answer to part 1.
     """
     robot = Robot(program)
-    state["robot"] = robot
     robot.run()
     return len(robot.painted)
 
 
-def part2(program, state):
+def part2(program):
     """
     Solve for the answer to part 2.
     """
-    robot = state["robot"]
+    robot = Robot(program)
+    robot.paint(WHITE)  # start on white this time
+    robot.run()
+    return robot.display_panels()
