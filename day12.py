@@ -4,9 +4,7 @@ AdventOfCode2019 - Day 12
 
 import collections
 import copy
-import functools
 import itertools
-import math
 
 from util import sign, lcm
 
