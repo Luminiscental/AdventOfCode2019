@@ -2,17 +2,11 @@
 AdventOfCode2019 - Day 8
 """
 
+from util import chunks_of
+
 WIDTH, HEIGHT = 25, 6
 
 BLACK, WHITE, TRANSPARENT = 0, 1, 2
-
-
-def chunks_of(size, iterable):
-    """
-    Split into a list of lists of the given size.
-    """
-    args = [iter(iterable)] * size
-    return [list(chunk) for chunk in zip(*args)]
 
 
 def display_image(image):

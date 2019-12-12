@@ -2,21 +2,7 @@
 AdventOfCode2019 - Day 4
 """
 
-
-def iter_chains(values):
-    """
-    Returns an iterator over the chains of repeated values in a sequence.
-    """
-    prev = values[0]
-    chain = 1
-    for value in values[1:]:
-        if value == prev:
-            chain = chain + 1
-        else:
-            yield prev, chain
-            chain = 1
-            prev = value
-    yield prev, chain
+from util import iter_chains
 
 
 def parse(puzzle_input):

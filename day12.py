@@ -2,135 +2,97 @@
 AdventOfCode2019 - Day 12
 """
 
+import collections
+import copy
+import functools
 import itertools
 import math
-import functools
 
+from util import sign, lcm
 
-def lcm(numbers):
-    """
-    Return the lowest common multiple of a sequence of numbers.
-    """
-
-    def lcm2(num1, num2):
-        """
-        Return the lowest common multiple of 2 numbers.
-        """
-        return num1 * num2 // math.gcd(num1, num2)
-
-    return functools.reduce(lcm2, numbers)
+Moon = collections.namedtuple("Moon", "pos vel")
 
 
 def parse_vector(string):
     """
-    Parse a string as a 3-component vector.
+    Parse a vector from a string (not robust).
     """
     string = string[1:-1]
     components = string.split(",")
     return [int(component.split("=")[-1]) for component in components]
 
 
-def vector_energy(vector):
+def energy(moon):
     """
-    Work out the energy from a vector; the manhattan magnitude.
-    """
-    return sum(abs(component) for component in vector)
-
-
-class Moon:
-    """
-    Class representing the physical state of a moon.
+    Calculate the energy of a moon.
     """
 
-    def __init__(self, position):
-        self.position = position
-        self.velocity = [0, 0, 0]
+    def vector_energy(vector):
+        """
+        Return the energy of a given vector (the manhattan norm).
+        """
+        return sum(abs(component) for component in vector)
 
-    def energy(self):
-        """
-        Calculate the energy of this moon; potential + kinetic.
-        """
-        return vector_energy(self.position) * vector_energy(self.velocity)
+    return vector_energy(moon.pos) * vector_energy(moon.vel)
 
-    def apply_velocity(self):
-        """
-        Integrate velocity for one timestep.
-        """
-        for i in range(3):
-            self.position[i] += self.velocity[i]
 
-    def copy(self):
-        """
-        Construct a new moon with the same state as self.
-        """
-        result = Moon(self.position.copy())
-        result.velocity = self.velocity.copy()
-        return result
+def step(moons, axis):
+    """
+    Apply a timestep to the system in a given axis.
+    """
+    for moon1, moon2 in itertools.combinations(moons, 2):
+        # apply gravity
+        to_moon1 = sign(moon1.pos[axis] - moon2.pos[axis])
+        moon1.vel[axis] -= to_moon1
+        moon2.vel[axis] += to_moon1
+    for moon in moons:
+        # apply velocity
+        moon.pos[axis] += moon.vel[axis]
 
-    @staticmethod
-    def apply_gravity(moon1, moon2):
-        """
-        Apply gravity to the velocity of moon1 and moon2.
-        """
-        for i in range(3):
-            if moon1.position[i] == moon2.position[i]:
-                continue
-            sign = 1 if moon1.position[i] > moon2.position[i] else -1
-            moon1.velocity[i] -= sign
-            moon2.velocity[i] += sign
 
-    @staticmethod
-    def timestep(moons):
-        """
-        Apply a single timestep for a list of moons.
-        """
-        for moon1, moon2 in itertools.combinations(moons, 2):
-            Moon.apply_gravity(moon1, moon2)
-        for moon in moons:
-            moon.apply_velocity()
-
-    @staticmethod
-    def get_state(moons, component):
-        """
-        Return the state of the system in a given component.
-        """
-        return tuple(
-            (moon.position[component], moon.velocity[component]) for moon in moons
-        )
+def state_tuple(moons, axis):
+    """
+    Get a tuple encoding the state of the system in a given axis.
+    """
+    return tuple((moon.pos[axis], moon.vel[axis]) for moon in moons)
 
 
 def parse(puzzle_input):
     """
-    Parse the puzzle input.
+    Parse the puzzle input into a list of moons.
     """
-    return [Moon(parse_vector(line)) for line in puzzle_input.splitlines()]
+    return [
+        Moon(pos=parse_vector(line), vel=[0, 0, 0])
+        for line in puzzle_input.splitlines()
+    ]
 
 
 def part1(moons):
     """
     Solve for the answer to part 1.
     """
-    sim = [moon.copy() for moon in moons]
+    sim = copy.deepcopy(moons)
     for _ in range(1000):
-        Moon.timestep(sim)
-    return sum(moon.energy() for moon in sim)
+        for axis in range(3):
+            step(sim, axis)
+    return sum(map(energy, sim))
 
 
 def part2(moons):
     """
     Solve for the answer to part 2.
     """
-    initial_states = {i: Moon.get_state(moons, i) for i in range(3)}
+    initial_states = [state_tuple(moons, axis) for axis in range(3)]
     periods = [0, 0, 0]
-    for i in range(3):
-        sim = [moon.copy() for moon in moons]
+    for axis in range(3):
+        sim = copy.deepcopy(moons)
         steps = 0
 
-        Moon.timestep(sim)
+        step(sim, axis)
         steps += 1
-        while Moon.get_state(sim, i) != initial_states[i]:
-            Moon.timestep(sim)
+        while state_tuple(sim, axis) != initial_states[axis]:
+            step(sim, axis)
             steps += 1
 
-        periods[i] = steps
+        periods[axis] = steps
     return lcm(periods)
