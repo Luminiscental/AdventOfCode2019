@@ -51,12 +51,23 @@ def apply_trim_args(func, *args):
     return func(*args[:arg_count])
 
 
+def _day_module_name(day_num):
+    return f"day{day_num:02}"
+
+
+def has_day(day_num):
+    """
+    Return whether a module to solve the given day is available.
+    """
+    return importlib.util.find_spec(_day_module_name(day_num)) is not None
+
+
 def run_day(day_num):
     """
     Solve and print the answer for a given day.
     """
     puzzle_input = get_input(day_num)
-    day_module = importlib.import_module(f"day{day_num:02}")
+    day_module = importlib.import_module(_day_module_name(day_num))
     day_state = {}
     with timer("interpreting input"):
         parsed_input = apply_trim_args(day_module.parse, puzzle_input, day_state)

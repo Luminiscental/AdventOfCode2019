@@ -31,12 +31,9 @@ def main():
         sys.exit(1)
 
     if sys.argv[1:] == ["all"]:
-        day_num = 0
-        while True:
-            try:
-                run_day(day_num)
-            except ModuleNotFoundError:
-                break
+        day_num = 1
+        while util.has_day(day_num):
+            run_day(day_num)
             day_num += 1
         sys.exit(0)
 
