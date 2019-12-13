@@ -80,8 +80,10 @@ def part2(moons):
     """
     Solve for the answer to part 2.
     """
+    # Since the time step is invertible, the first repeat must be a repeat of the initial state.
     initial_states = [state_tuple(moons, axis) for axis in range(3)]
     periods = [0, 0, 0]
+    # The overall period is the lcm of the period of the individual component systems.
     for axis in range(3):
         sim = copy.deepcopy(moons)
         steps = 0

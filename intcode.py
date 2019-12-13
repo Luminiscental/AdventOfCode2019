@@ -34,17 +34,22 @@ class Memory:
             end = idx + 1
         self.arr += [0] * (end - len(self.arr))
 
-    def __getitem__(self, idx):
+    def _validate_idx(self, idx):
+        non_negative = idx.start >= 0 if isinstance(idx, slice) else idx >= 0
+        assert non_negative, "negative indices not supported for memory access"
         self._extend(idx)
+
+    def __getitem__(self, idx):
+        self._validate_idx(idx)
         return self.arr.__getitem__(idx)
 
     def __setitem__(self, idx, value):
-        self._extend(idx)
+        self._validate_idx(idx)
         return self.arr.__setitem__(idx, value)
 
     def load(self, opcodes):
         """
-        Load a program into memory.
+        Load a program into memory, discarding any current data.
         """
         self.arr = opcodes.copy()
 
@@ -81,24 +86,23 @@ class Interpretor:
         self.output_loc = None
 
         self.opcodes = {
-            1: Opcode(arg_count=3, action=self._add),
-            2: Opcode(arg_count=3, action=self._mul),
+            1: Opcode(arg_count=3, action=self._calculate(lambda x, y: x + y)),
+            2: Opcode(arg_count=3, action=self._calculate(lambda x, y: x * y)),
             3: Opcode(arg_count=1, action=self._get_input),
             4: Opcode(arg_count=1, action=self._put_output),
-            5: Opcode(arg_count=2, action=self._jump_if_true),
-            6: Opcode(arg_count=2, action=self._jump_if_false),
-            7: Opcode(arg_count=3, action=self._less),
-            8: Opcode(arg_count=3, action=self._equals),
+            5: Opcode(arg_count=2, action=self._jump_if(lambda x: x != 0)),
+            6: Opcode(arg_count=2, action=self._jump_if(lambda x: x == 0)),
+            7: Opcode(arg_count=3, action=self._calculate(lambda x, y: x < y)),
+            8: Opcode(arg_count=3, action=self._calculate(lambda x, y: x == y)),
             9: Opcode(arg_count=1, action=self._shift_rel_base),
         }
 
-    def _add(self, arg1, arg2, arg3):
-        self._set(arg3, self._get(arg1) + self._get(arg2))
-        return NO_JUMP
+    def _calculate(self, func):
+        def action(*args):
+            self._set(args[-1], func(*map(self._get, args[:-1])))
+            return NO_JUMP
 
-    def _mul(self, arg1, arg2, arg3):
-        self._set(arg3, self._get(arg1) * self._get(arg2))
-        return NO_JUMP
+        return action
 
     def _get_input(self, arg1):
         self.state = RunState.WAITING_INPUT
@@ -112,25 +116,14 @@ class Interpretor:
         self.output_loc = arg1
         return NO_JUMP
 
-    def _jump_if_true(self, arg1, arg2):
-        if self._get(arg1) != 0:
-            self.ipointer = self._get(arg2)
-            return JUMP
-        return NO_JUMP
+    def _jump_if(self, func):
+        def action(*args):
+            if func(*map(self._get, args[:-1])):
+                self.ipointer = self._get(args[-1])
+                return JUMP
+            return NO_JUMP
 
-    def _jump_if_false(self, arg1, arg2):
-        if self._get(arg1) == 0:
-            self.ipointer = self._get(arg2)
-            return JUMP
-        return NO_JUMP
-
-    def _less(self, arg1, arg2, arg3):
-        self._set(arg3, int(self._get(arg1) < self._get(arg2)))
-        return NO_JUMP
-
-    def _equals(self, arg1, arg2, arg3):
-        self._set(arg3, int(self._get(arg1) == self._get(arg2)))
-        return NO_JUMP
+        return action
 
     def _shift_rel_base(self, arg1):
         self.rel_base += self._get(arg1)
@@ -167,7 +160,7 @@ class Interpretor:
         """
         Extract the output from the interpretor when it is in the relevant state.
         """
-        assert self.state == RunState.GIVING_OUTPUT
+        assert self.state == RunState.GIVING_OUTPUT, "no output to give"
         assert self.output_loc is not None
 
         result = self._get(self.output_loc)
@@ -192,7 +185,7 @@ class Interpretor:
         """
         Send input to the interpretor when it is in the relevant state.
         """
-        assert self.state == RunState.WAITING_INPUT
+        assert self.state == RunState.WAITING_INPUT, "unexpected input"
         assert self.input_loc is not None
 
         self._set(self.input_loc, input_value)
@@ -209,6 +202,8 @@ class Interpretor:
         if opcode_idx == 99:
             return HALT
 
+        if opcode_idx not in self.opcodes:
+            raise ValueError(f"Unknown opcode {opcode_idx}")
         opcode = self.opcodes[opcode_idx]
 
         arg_start = self.ipointer + 1
@@ -236,13 +231,18 @@ class Interpretor:
         # program halted
         ```
         """
+        if self.waiting_input() or self.giving_output():
+            return CONTINUE
+
         if self.state == RunState.IDLE:
             self.ipointer = 0
             self.memory.load(opcodes)
+
         self.state = RunState.RUNNING
         while self._step():
             if self.state != RunState.RUNNING:
                 return CONTINUE
+
         self.state = RunState.IDLE
         return HALT
 
