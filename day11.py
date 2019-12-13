@@ -2,7 +2,6 @@
 AdventOfCode2019 - Day 11
 """
 
-import operator
 import intcode
 
 from day02 import parse
