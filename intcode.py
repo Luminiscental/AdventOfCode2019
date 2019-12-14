@@ -35,7 +35,9 @@ class Memory:
         self.arr += [0] * (end - len(self.arr))
 
     def _validate_idx(self, idx):
-        non_negative = idx.start >= 0 if isinstance(idx, slice) else idx >= 0
+        non_negative = (
+            (idx.start >= 0 and idx.stop >= 0) if isinstance(idx, slice) else idx >= 0
+        )
         assert non_negative, "negative indices not supported for memory access"
         self._extend(idx)
 
