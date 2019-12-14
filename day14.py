@@ -37,9 +37,11 @@ def minimum_ore(reactions, for_fuel):
     Return the minimum ore needed to make the given amount of fuel given the reaction dict.
     """
 
-    # not necessary to memoize but a nice speed up
-    @functools.lru_cache()
+    @functools.lru_cache()  # memoization not necessary but gives a nice speed up
     def made_from(reactant, product):
+        """
+        Check if reactant is in any of the reactions that could be needed to make product.
+        """
         if product == "ORE":
             return False
         prod_reactants = [reactant.name for reactant in reactions[product].reactants]
@@ -47,12 +49,18 @@ def minimum_ore(reactions, for_fuel):
             made_from(reactant, prod_reactant) for prod_reactant in prod_reactants
         )
 
+    # apply reactions backwards until we are left with an amount of ore
+
     requirements = {"FUEL": for_fuel}
     while not all(req == "ORE" for req in requirements):
+        # the intersection of what we can make with what we want
         reducables = reactions.keys() & requirements.keys()
         for product in reducables:
+            # only reduce a term if we know we won't need more of it later
+            # this is the crucial minimizing step
             if any(made_from(product, req) for req in requirements):
                 continue
+            # apply the reaction backwards to update our requirements
             reaction = reactions[product]
             req_count = requirements.pop(product)
             out_count = reaction.product.count
@@ -77,19 +85,22 @@ def part2(reactions):
     """
     initial_ore = 1000000000000
 
-    # get a bound
+    # get an amount of fuel we can't make
+
     fuel = 1
     while minimum_ore(reactions, fuel) <= initial_ore:
         fuel *= 2
 
-    # use bisection
-    lower_bound = fuel // 2
-    upper_bound = fuel
+    # use the bisection method to find the last amount of fuel which is makeable
+
+    lower_bound = fuel // 2  # can make this much
+    upper_bound = fuel  # can't make this much
     while upper_bound - lower_bound > 1:
-        mid_fuel = (lower_bound + upper_bound) // 2
-        mid_ore = minimum_ore(reactions, mid_fuel)
-        if mid_ore <= initial_ore:
-            lower_bound = mid_fuel
+        # the midpoint is either an improved upper bound or an improved lower bound
+        mid_fuel_amount = (lower_bound + upper_bound) // 2
+        mid_ore_requirement = minimum_ore(reactions, mid_fuel_amount)
+        if mid_ore_requirement <= initial_ore:
+            lower_bound = mid_fuel_amount
         else:
-            upper_bound = mid_fuel
+            upper_bound = mid_fuel_amount
     return lower_bound
