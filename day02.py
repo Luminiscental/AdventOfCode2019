@@ -19,7 +19,7 @@ def run_prog(interpretor, program, noun, verb):
     edited = program.copy()
     edited[1] = noun
     edited[2] = verb
-    # we don't expect any io so dont have to loop
+    # we don't expect any input requests so don't have to loop
     interpretor.run(edited)
     return interpretor.memory[0]
 
@@ -42,6 +42,8 @@ def part2(opcodes):
     noun_term = run_prog(interpretor, opcodes, 1, 0) - constant_term
     verb_term = run_prog(interpretor, opcodes, 0, 1) - constant_term
 
+    assert verb_term == 1
+
     desired_output = 19690720
     verbs = [
         (desired_output - noun_term * noun - constant_term) // verb_term
@@ -49,4 +51,7 @@ def part2(opcodes):
     ]
     verbs = [verb for verb in verbs if verb >= 0]
     noun, verb = len(verbs) - 1, verbs[-1]
+
+    assert run_prog(interpretor, opcodes, noun, verb) == desired_output
+
     return 100 * noun + verb

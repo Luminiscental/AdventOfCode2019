@@ -21,8 +21,8 @@ def pipeline(program, amplifiers, phase_settings, loop=False):
     while curr < len(amplifiers) and amplifiers[curr].run(program):
         if amplifiers[curr].waiting_input():
             amplifiers[curr].receive_input(signal)
-        elif amplifiers[curr].giving_output():
-            signal = amplifiers[curr].query_output()
+        for curr_output in amplifiers[curr].output():
+            signal = curr_output
             curr += 1
             if loop:
                 curr = curr % len(amplifiers)
@@ -32,23 +32,22 @@ def pipeline(program, amplifiers, phase_settings, loop=False):
     return signal
 
 
-def part1(opcodes):
+def part1(opcodes, state):
     """
     Solve for the answer to part 1.
     """
-    amplifiers = [intcode.Interpretor() for _ in range(5)]
+    state["amplifiers"] = [intcode.Interpretor() for _ in range(5)]
     return max(
-        pipeline(opcodes, amplifiers, phase_settings)
+        pipeline(opcodes, state["amplifiers"], phase_settings)
         for phase_settings in itertools.permutations(range(5))
     )
 
 
-def part2(opcodes):
+def part2(opcodes, state):
     """
     Solve for the answer to part 2.
     """
-    amplifiers = [intcode.Interpretor() for _ in range(5)]
     return max(
-        pipeline(opcodes, amplifiers, phase_settings, loop=True)
+        pipeline(opcodes, state["amplifiers"], phase_settings, loop=True)
         for phase_settings in itertools.permutations(range(5, 10))
     )

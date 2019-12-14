@@ -2,11 +2,11 @@
 Module for the Intcode interpretor.
 """
 
-from collections import namedtuple
-from enum import Enum
+import collections
+import enum
 
 # action is a function which takes the arguments and returns whether a jump occured
-Opcode = namedtuple("Opcode", "arg_count action")
+Opcode = collections.namedtuple("Opcode", "arg_count action")
 
 JUMP = True
 NO_JUMP = not JUMP
@@ -60,7 +60,7 @@ class Memory:
         self.arr = []
 
 
-class RunState(Enum):
+class RunState(enum.Enum):
     """
     State enum for the interpretor.
     """
@@ -68,7 +68,6 @@ class RunState(Enum):
     IDLE = 0
     RUNNING = 1
     WAITING_INPUT = 2
-    GIVING_OUTPUT = 3
 
 
 class Interpretor:
@@ -81,9 +80,9 @@ class Interpretor:
         self.ipointer = 0
         self.rel_base = 0
         self.state = RunState.IDLE
-        self.input_queue = []
+        self.input_queue = collections.deque()
         self.input_loc = None
-        self.output_loc = None
+        self.output_queue = collections.deque()
 
         self.opcodes = {
             1: Opcode(arg_count=3, action=self._calculate(lambda x, y: x + y)),
@@ -108,12 +107,11 @@ class Interpretor:
         self.state = RunState.WAITING_INPUT
         self.input_loc = arg1
         if self.input_queue:
-            self.receive_input(self.input_queue.pop(0))
+            self.receive_input(self.input_queue.popleft())
         return NO_JUMP
 
     def _put_output(self, arg1):
-        self.state = RunState.GIVING_OUTPUT
-        self.output_loc = arg1
+        self.output_queue.append(self._get(arg1))
         return NO_JUMP
 
     def _jump_if(self, func):
@@ -150,24 +148,15 @@ class Interpretor:
         else:
             raise ValueError("Unknown parameter mode " + str(mode))
 
-    def giving_output(self):
+    def output(self, group_size=1):
         """
-        Check if the interpretor is giving output.
+        Generator for handling outputs. If a group_size is specified outputs come in tuples.
         """
-        return self.state == RunState.GIVING_OUTPUT
-
-    def query_output(self):
-        """
-        Extract the output from the interpretor when it is in the relevant state.
-        """
-        assert self.state == RunState.GIVING_OUTPUT, "no output to give"
-        assert self.output_loc is not None
-
-        result = self._get(self.output_loc)
-
-        self.output_loc = None
-        self.state = RunState.RUNNING
-        return result
+        while len(self.output_queue) >= group_size:
+            if group_size == 1:
+                yield self.output_queue.popleft()
+            else:
+                yield tuple(self.output_queue.popleft() for _ in range(group_size))
 
     def waiting_input(self):
         """
@@ -222,17 +211,23 @@ class Interpretor:
         usage looks like:
 
         ```
-        while interpretor.run(program):
-            if interpretor.state == RunState.WAITING_INPUT:
-                interpretor.receive_input(my_input)
-            elif interpretor.state == RunState.GIVING_OUTPUT:
-                my_output = interpretor.query_output()
+        # Queue an input to give
+        interpretor.queue_input(37)
 
-        # program halted
+        # Run program until a halt instruction
+        while interpretor.run(program):
+
+            # Handle input when the queue is empty
+            if interpretor.waiting_input():
+                interpretor.receive_input(my_input)
+
+            # Handle outputs in groups of 3
+            for output1, output2, output3 in interpretor.output(group_size=3):
+                my_output_handler(output1, output2, output3)
         ```
         """
-        if self.waiting_input() or self.giving_output():
-            return CONTINUE
+        if self.waiting_input():
+            raise ValueError("Input required to continue running!")
 
         if self.state == RunState.IDLE:
             self.ipointer = 0
@@ -240,7 +235,7 @@ class Interpretor:
 
         self.state = RunState.RUNNING
         while self._step():
-            if self.state != RunState.RUNNING:
+            if self.waiting_input() or self.output_queue:
                 return CONTINUE
 
         self.state = RunState.IDLE

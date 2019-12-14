@@ -61,17 +61,12 @@ class Robot:
         """
         Run the program.
         """
-        output_queue = []
         while self.interpretor.run(self.program):
             if self.interpretor.waiting_input():
                 self.interpretor.receive_input(self.check())
-            if self.interpretor.giving_output():
-                output_queue.append(self.interpretor.query_output())
-                if len(output_queue) == 2:
-                    color = output_queue.pop(0)
-                    direction = output_queue.pop(0)
-                    self.paint(color)
-                    self.turn(direction)
+            for color, direction in self.interpretor.output(group_size=2):
+                self.paint(color)
+                self.turn(direction)
 
     def display_panels(self):
         """

@@ -37,17 +37,12 @@ class Game:
         """
         Run the game.
         """
-        output_queue = []
         while self.interpretor.run(self.program):
-            if self.interpretor.giving_output():
-                output_queue.append(self.interpretor.query_output())
-                if len(output_queue) == 3:
-                    x_pos, y_pos, tile_id = output_queue
-                    output_queue.clear()
-                    if (x_pos, y_pos) == (-1, 0):
-                        self.score = tile_id
-                    else:
-                        self.draw(x_pos, y_pos, tile_id)
+            for x_pos, y_pos, tile_id in self.interpretor.output(group_size=3):
+                if (x_pos, y_pos) == (-1, 0):
+                    self.score = tile_id
+                else:
+                    self.draw(x_pos, y_pos, tile_id)
             if self.interpretor.waiting_input():
                 self.interpretor.receive_input(self.choose_move())
 
