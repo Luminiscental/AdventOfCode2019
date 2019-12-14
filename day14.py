@@ -4,7 +4,6 @@ AdventOfCode2019 - Day 14
 
 import math
 import collections
-import pprint
 import functools
 
 Term = collections.namedtuple("Term", "count name")
@@ -33,9 +32,9 @@ def parse(puzzle_input):
     return reactions
 
 
-def part1(reactions):
+def minimum_ore(reactions, for_fuel):
     """
-    Solve for the answer to part 1.
+    Return the minimum ore needed to make the given amount of fuel given the reaction dict.
     """
 
     # not necessary to memoize but a nice speed up
@@ -48,7 +47,7 @@ def part1(reactions):
             made_from(reactant, prod_reactant) for prod_reactant in prod_reactants
         )
 
-    requirements = {"FUEL": 1}
+    requirements = {"FUEL": for_fuel}
     while not all(req == "ORE" for req in requirements):
         reducables = reactions.keys() & requirements.keys()
         for product in reducables:
@@ -61,10 +60,36 @@ def part1(reactions):
             for reactant in reaction.reactants:
                 requirements.setdefault(reactant.name, 0)
                 requirements[reactant.name] += reactant.count * repeats
+
     return requirements["ORE"]
+
+
+def part1(reactions):
+    """
+    Solve for the answer to part 1.
+    """
+    return minimum_ore(reactions, for_fuel=1)
 
 
 def part2(reactions):
     """
     Solve for the answer to part 2.
     """
+    initial_ore = 1000000000000
+
+    # get a bound
+    fuel = 1
+    while minimum_ore(reactions, fuel) <= initial_ore:
+        fuel *= 2
+
+    # use bisection
+    lower_bound = fuel // 2
+    upper_bound = fuel
+    while upper_bound - lower_bound > 1:
+        mid_fuel = (lower_bound + upper_bound) // 2
+        mid_ore = minimum_ore(reactions, mid_fuel)
+        if mid_ore <= initial_ore:
+            lower_bound = mid_fuel
+        else:
+            upper_bound = mid_fuel
+    return lower_bound
