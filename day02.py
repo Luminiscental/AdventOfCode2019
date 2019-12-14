@@ -19,8 +19,8 @@ def run_prog(interpretor, program, noun, verb):
     edited = program.copy()
     edited[1] = noun
     edited[2] = verb
-    # we don't expect any input requests so don't have to loop
-    interpretor.run(edited)
+    while interpretor.run(edited):
+        pass  # we don't expect any input to be required
     return interpretor.memory[0]
 
 
