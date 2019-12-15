@@ -1,7 +1,4 @@
-"""
-AdventOfCode2019 - Day 14
-"""
-
+"""AdventOfCode2019 - Day 14"""
 import math
 import collections
 import functools
@@ -11,14 +8,9 @@ Reaction = collections.namedtuple("Reaction", "reactants product")
 
 
 def parse(puzzle_input):
-    """
-    Parse the puzzle input into a dict of reaction output name to reaction info.
-    """
+    """Parse the puzzle input into a dict of reaction output to reaction info."""
 
     def parse_term(term_string):
-        """
-        Parse a string like "12 X" into a term value.
-        """
         count_str, name_str = term_string.split()
         return Term(int(count_str), name_str)
 
@@ -33,24 +25,18 @@ def parse(puzzle_input):
 
 
 def minimum_ore(reactions, for_fuel):
-    """
-    Return the minimum ore needed to make the given amount of fuel given the reaction dict.
-    """
+    """Return the minimum ore needed to make the given amount of fuel given the reaction dict."""
 
     @functools.lru_cache()  # memoization not necessary but gives a nice speed up
-    def made_from(reactant, product):
-        """
-        Check if reactant is in any of the reactions that could be needed to make product.
-        """
+    def could_need(reactant, product):
         if product == "ORE":
             return False
         prod_reactants = [reactant.name for reactant in reactions[product].reactants]
         return reactant in prod_reactants or any(
-            made_from(reactant, prod_reactant) for prod_reactant in prod_reactants
+            could_need(reactant, prod_reactant) for prod_reactant in prod_reactants
         )
 
     # apply reactions backwards until we are left with an amount of ore
-
     requirements = {"FUEL": for_fuel}
     while not all(req == "ORE" for req in requirements):
         # the intersection of what we can make with what we want
@@ -58,7 +44,7 @@ def minimum_ore(reactions, for_fuel):
         for product in reducables:
             # only reduce a term if we know we won't need more of it later
             # this is the crucial minimizing step
-            if any(made_from(product, req) for req in requirements):
+            if any(could_need(product, req) for req in requirements):
                 continue
             # apply the reaction backwards to update our requirements
             reaction = reactions[product]
@@ -68,31 +54,22 @@ def minimum_ore(reactions, for_fuel):
             for reactant in reaction.reactants:
                 requirements.setdefault(reactant.name, 0)
                 requirements[reactant.name] += reactant.count * repeats
-
     return requirements["ORE"]
 
 
 def part1(reactions):
-    """
-    Solve for the answer to part 1.
-    """
+    """Solve for the answer to part 1."""
     return minimum_ore(reactions, for_fuel=1)
 
 
 def part2(reactions):
-    """
-    Solve for the answer to part 2.
-    """
+    """Solve for the answer to part 2."""
     initial_ore = 1000000000000
-
     # get an amount of fuel we can't make
-
     fuel = 1
     while minimum_ore(reactions, fuel) <= initial_ore:
         fuel *= 2
-
-    # use the bisection method to find the last amount of fuel which is makeable
-
+    # do a binary search to find the maximum makeable fuel amount
     lower_bound = fuel // 2  # can make this much
     upper_bound = fuel  # can't make this much
     while upper_bound - lower_bound > 1:

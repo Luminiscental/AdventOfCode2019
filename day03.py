@@ -1,12 +1,9 @@
-"""
-AdventOfCode2019 - Day 3
-"""
+"""AdventOfCode2019 - Day 3"""
 
 
 def build_wire(instructions):
-    """
-    Build a wire into a dictionary of points to the lowest number of steps they took to get to.
-    Doesn't include the origin.
+    """Build a wire from a list of directions.
+    Returns a dict from point to number of steps, excluding the origin.
     """
     wire = {}
     direction_map = {
@@ -32,24 +29,18 @@ def build_wire(instructions):
 
 
 def parse(puzzle_input):
-    """
-    Parse the puzzle input.
-    """
+    """Parse the puzzle input."""
     return [build_wire(line.split(",")) for line in puzzle_input.splitlines()]
 
 
 def part1(wires):
-    """
-    Solve for the answer to part 1.
-    """
+    """Solve for the answer to part 1."""
     intersections = set.intersection(*[set(wire.keys()) for wire in wires])
     return min(abs(point_x) + abs(point_y) for point_x, point_y in intersections)
 
 
 def part2(wires):
-    """
-    Solve for the answer to part 2.
-    """
+    """Solve for the answer to part 2."""
     intersections = set.intersection(*[set(wire.keys()) for wire in wires])
     return min(
         sum(wire[point_x, point_y] for wire in wires)

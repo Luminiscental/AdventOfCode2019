@@ -1,17 +1,11 @@
-"""
-AdventOfCode2019 - Day 7
-"""
-
+"""AdventOfCode2019 - Day 7"""
 import itertools
 import intcode
-
 from day02 import parse
 
 
 def pipeline(program, amplifiers, phase_settings, loop=False):
-    """
-    Run a signal that starts at 0 through a pipeline of amplifiers.
-    """
+    """Run a signal that starts at 0 through a pipeline of amplifiers."""
     # setup phase settings
     for amplifier, phase_setting in zip(amplifiers, phase_settings):
         amplifier.queue_input(phase_setting)
@@ -33,9 +27,7 @@ def pipeline(program, amplifiers, phase_settings, loop=False):
 
 
 def part1(opcodes, state):
-    """
-    Solve for the answer to part 1.
-    """
+    """Solve for the answer to part 1."""
     state["amplifiers"] = [intcode.Interpretor() for _ in range(5)]
     return max(
         pipeline(opcodes, state["amplifiers"], phase_settings)
@@ -44,9 +36,7 @@ def part1(opcodes, state):
 
 
 def part2(opcodes, state):
-    """
-    Solve for the answer to part 2.
-    """
+    """Solve for the answer to part 2."""
     return max(
         pipeline(opcodes, state["amplifiers"], phase_settings, loop=True)
         for phase_settings in itertools.permutations(range(5, 10))

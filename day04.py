@@ -1,23 +1,16 @@
-"""
-AdventOfCode2019 - Day 4
-"""
-
+"""AdventOfCode2019 - Day 4"""
 from util import iter_chains
 
 
 def parse(puzzle_input):
-    """
-    Parse the puzzle input into a list of increasing digit passwords in the range.
-    """
+    """Parse the puzzle input into a list of increasing digit passwords in the range."""
     start, end = [int(number) for number in puzzle_input.split("-")]
     passwords = [str(number) for number in range(start, end)]
     return [password for password in passwords if sorted(password) == list(password)]
 
 
 def part1(passwords):
-    """
-    Solve for the answer to part 1.
-    """
+    """Solve for the answer to part 1."""
     return sum(
         1
         for password in passwords
@@ -26,9 +19,7 @@ def part1(passwords):
 
 
 def part2(passwords):
-    """
-    Solve for the answer to part 2.
-    """
+    """Solve for the answer to part 2."""
     return sum(
         1
         for password in passwords

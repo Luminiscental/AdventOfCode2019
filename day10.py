@@ -9,9 +9,7 @@ AsteroidField = namedtuple("AsteroidField", "width height asteroids")
 
 
 def get_directions(width, height, order_cw=False):
-    """
-    Get a list of the x and y steps for every direction within the region.
-    """
+    """Get a list of the x and y steps for every direction within the region."""
     result = [
         (x_step, y_step)
         for x_step in range(1 - width, width)
@@ -25,9 +23,7 @@ def get_directions(width, height, order_cw=False):
 
 
 def raycast(field, location, direction):
-    """
-    Return the position of the first asteroid hit, or None.
-    """
+    """Return the position of the first asteroid hit, or None."""
     x_step, y_step = direction
     loc_x, loc_y = location
     look_x, look_y = loc_x + x_step, loc_y + y_step
@@ -39,18 +35,14 @@ def raycast(field, location, direction):
 
 
 def count_visible(field, location, directions):
-    """
-    Count how many asteroids are visible from a given location in a field.
-    """
+    """Count how many asteroids are visible from a given location in a field."""
     return sum(
         1 for direction in directions if raycast(field, location, direction) is not None
     )
 
 
 def parse(puzzle_input):
-    """
-    Parse the puzzle input into a set of asteroid locations.
-    """
+    """Parse the puzzle input into a set of asteroid locations."""
     rows = puzzle_input.splitlines()
     height = len(rows)
     width = len(rows[0])
@@ -62,9 +54,7 @@ def parse(puzzle_input):
 
 
 def part1(field, state):
-    """
-    Solve for the answer to part 1.
-    """
+    """Solve for the answer to part 1."""
     directions = get_directions(field.width, field.height)
     loc_info = {
         asteroid: count_visible(field, asteroid, directions)
@@ -76,9 +66,7 @@ def part1(field, state):
 
 
 def part2(field, state):
-    """
-    Solve for the answer to part 2.
-    """
+    """Solve for the answer to part 2."""
     station_loc = state["station"]
     directions = get_directions(field.width, field.height, order_cw=True)
     dir_idx = directions.index((0, -1))

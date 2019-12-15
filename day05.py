@@ -1,17 +1,10 @@
-"""
-AdventOfCode2019 - Day 5
-"""
-
-
+"""AdventOfCode2019 - Day 5"""
 import intcode
-
 from day02 import parse
 
 
 def run_tests(program, input_constant):
-    """
-    Run the tests giving a certain input.
-    """
+    """Run the tests giving a certain input."""
     interpretor = intcode.Interpretor()
     interpretor.queue_input(input_constant)
     while interpretor.run(program):
@@ -23,14 +16,10 @@ def run_tests(program, input_constant):
 
 
 def part1(opcodes):
-    """
-    Solve for the answer to part 1.
-    """
+    """Solve for the answer to part 1."""
     return run_tests(opcodes, input_constant=1)
 
 
 def part2(opcodes):
-    """
-    Solve for the answer to part 2.
-    """
+    """Solve for the answer to part 2."""
     return run_tests(opcodes, input_constant=5)
