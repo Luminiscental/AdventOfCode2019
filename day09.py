@@ -1,6 +1,4 @@
-"""
-AdventOfCode2019 - Day 9
-"""
+"""AdventOfCode2019 - Day 9"""
 from day05 import run_tests
 from day02 import parse
 

@@ -1,6 +1,4 @@
-"""
-AdventOfCode2019 - Day 10
-"""
+"""AdventOfCode2019 - Day 10"""
 from collections import namedtuple
 import math
 import operator

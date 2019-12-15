@@ -1,6 +1,4 @@
-"""
-AdventOfCode2019 - Day 8
-"""
+"""AdventOfCode2019 - Day 8"""
 from util import chunks_of
 
 WIDTH, HEIGHT = 25, 6
