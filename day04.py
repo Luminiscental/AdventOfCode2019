@@ -1,5 +1,5 @@
 """AdventOfCode2019 - Day 4"""
-from util import iter_chains
+from util import chain_lengths
 
 
 def parse(puzzle_input):
@@ -14,7 +14,7 @@ def part1(passwords):
     return sum(
         1
         for password in passwords
-        if any(chain_length >= 2 for _, chain_length in iter_chains(password))
+        if any(chain_length >= 2 for chain_length in chain_lengths(password))
     )
 
 
@@ -23,5 +23,5 @@ def part2(passwords):
     return sum(
         1
         for password in passwords
-        if any(chain_length == 2 for _, chain_length in iter_chains(password))
+        if any(chain_length == 2 for chain_length in chain_lengths(password))
     )

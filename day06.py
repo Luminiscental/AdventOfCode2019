@@ -1,5 +1,6 @@
 """AdventOfCode2019 - Day 6"""
-from collections import defaultdict
+import collections
+import functools
 
 
 class Tree:
@@ -15,6 +16,7 @@ class Tree:
             yield child
             yield from child
 
+    @functools.lru_cache(maxsize=None)
     def find(self, value):
         """Check whether a value is contained in the tree, returning None if not."""
         if self.value == value:
@@ -58,7 +60,7 @@ class Tree:
 
 def parse(puzzle_input):
     """Parse the puzzle input into a dictionary of nodes to children."""
-    parent_dict = defaultdict(set)
+    parent_dict = collections.defaultdict(set)
     for line in puzzle_input.splitlines():
         orbited, orbitor = line.split(")")
         parent_dict[orbited].add(orbitor)
@@ -68,6 +70,7 @@ def parse(puzzle_input):
 def part1(parent_dict):
     """Solve for the answer to part 1."""
 
+    @functools.lru_cache(maxsize=None)
     def count_paths(parent):
         # using sum() is noticeably slower than this for loop
         result = 0

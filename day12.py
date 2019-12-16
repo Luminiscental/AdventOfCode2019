@@ -3,6 +3,8 @@ import collections
 import copy
 import itertools
 import re
+import multiprocessing
+import functools
 from util import sign, lcm
 
 Moon = collections.namedtuple("Moon", "pos vel")
@@ -56,21 +58,24 @@ def part1(moons):
     return sum(map(energy, sim))
 
 
-def part2(moons):
-    """Solve for the answer to part 2."""
-    # Since the time step is invertible, the first repeat must be a repeat of the initial state.
-    initial_states = [state_tuple(moons, axis) for axis in range(3)]
-    periods = [0, 0, 0]
-    # The overall period is the lcm of the period of the individual component systems.
-    for axis in range(3):
-        sim = copy.deepcopy(moons)
-        steps = 0
-
+def find_period(moons, initial_states, axis):
+    """Find the period of the system in a given axis.
+    Since the time step is invertible, the first repeat will be the initial state."""
+    sim = copy.deepcopy(moons)
+    steps = 0
+    step(sim, axis)
+    steps += 1
+    while state_tuple(sim, axis) != initial_states[axis]:
         step(sim, axis)
         steps += 1
-        while state_tuple(sim, axis) != initial_states[axis]:
-            step(sim, axis)
-            steps += 1
+    return steps
 
-        periods[axis] = steps
+
+def part2(moons):
+    """Solve for the answer to part 2."""
+    initial_states = [state_tuple(moons, axis) for axis in range(3)]
+    period_finder = functools.partial(find_period, moons, initial_states)
+    with multiprocessing.Pool(3) as pool:
+        periods = pool.map(period_finder, range(3))
+    # The overall period is the lcm of the period of the individual component systems.
     return lcm(periods)

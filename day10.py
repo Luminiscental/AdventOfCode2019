@@ -1,22 +1,21 @@
 """AdventOfCode2019 - Day 10"""
-from collections import namedtuple
+import collections
 import math
 import operator
 
-AsteroidField = namedtuple("AsteroidField", "width height asteroids")
+AsteroidField = collections.namedtuple("AsteroidField", "width height asteroids")
 
 
-def get_directions(width, height, order_cw=False):
-    """Get a list of the x and y steps for every direction within the region."""
+def get_directions(width, height):
+    """Get a list of the x and y steps for every direction within the region, ordered clockwise."""
     result = [
         (x_step, y_step)
         for x_step in range(1 - width, width)
         for y_step in range(1 - height, height)
         if math.gcd(x_step, y_step) == 1
     ]
-    if order_cw:
-        # upside down coordinates so atan2 actually goes clockwise
-        result.sort(key=lambda direction: math.atan2(direction[1], direction[0]))
+    # upside down coordinates so atan2 actually goes clockwise
+    result.sort(key=lambda direction: math.atan2(direction[1], direction[0]))
     return result
 
 
@@ -53,7 +52,8 @@ def parse(puzzle_input):
 
 def part1(field, state):
     """Solve for the answer to part 1."""
-    directions = get_directions(field.width, field.height)
+    state["directions"] = directions = get_directions(field.width, field.height)
+
     loc_info = {
         asteroid: count_visible(field, asteroid, directions)
         for asteroid in field.asteroids
@@ -66,7 +66,8 @@ def part1(field, state):
 def part2(field, state):
     """Solve for the answer to part 2."""
     station_loc = state["station"]
-    directions = get_directions(field.width, field.height, order_cw=True)
+    directions = state["directions"]
+
     dir_idx = directions.index((0, -1))
     destroyed = 0
     while destroyed < 200:

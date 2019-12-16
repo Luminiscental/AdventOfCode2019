@@ -1,12 +1,13 @@
 """AdventOfCode2019 - Day 16"""
 import itertools
+import multiprocessing
+import functools
+from util import repeat_each
 
 
 def get_pattern(idx):
     """Get the coefficient pattern for a given index."""
-    return itertools.cycle(
-        itertools.chain.from_iterable(zip(*itertools.tee([1, 0, -1, 0], idx + 1)))
-    )
+    return itertools.cycle(repeat_each((1, 0, -1, 0), idx + 1))
 
 
 def get_fft(signal, idx):
@@ -18,7 +19,9 @@ def get_fft(signal, idx):
 
 def apply_fft(signal):
     """Apply the fft to an iterable signal."""
-    return [get_fft(signal, i) for i in range(len(signal))]
+    calc_at_idx = functools.partial(get_fft, signal)
+    with multiprocessing.Pool() as pool:
+        return pool.map(calc_at_idx, range(len(signal)))
 
 
 def display_signal(signal):
@@ -60,5 +63,4 @@ def part2(signal):
         from_back = len(signal) - idx
         return sum(weights[i] * signal[i - from_back] for i in range(from_back)) % 10
 
-    message = [get_output_at(idx) for idx in range(message_offset, message_offset + 8)]
-    return display_signal(message)
+    return display_signal(map(get_output_at, range(message_offset, message_offset + 8)))

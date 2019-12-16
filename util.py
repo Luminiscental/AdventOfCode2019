@@ -21,24 +21,31 @@ def apply_trim_args(func, *args):
     return func(*args[:arg_count])
 
 
+def repeat_each(iterable, count):
+    """Make an iterator repeating every element of an iterable a given number of times."""
+    for elem in iterable:
+        for _ in range(count):
+            yield elem
+
+
 def chunks_of(size, iterable):
-    """Split into a list of lists of the given size."""
+    """Split an iterable into a list of lists of the given size."""
     args = [iter(iterable)] * size
     return [list(chunk) for chunk in zip(*args)]
 
 
-def iter_chains(values):
-    """Returns an iterator over the chains of repeated values in a sequence."""
-    prev = values[0]
+def chain_lengths(values):
+    """Returns an iterator over the lengths of chains of repeated values in a sequence."""
     chain = 1
+    prev = values[0]
     for value in values[1:]:
         if value == prev:
             chain = chain + 1
         else:
-            yield prev, chain
+            yield chain
             chain = 1
             prev = value
-    yield prev, chain
+    yield chain
 
 
 def sign(number):

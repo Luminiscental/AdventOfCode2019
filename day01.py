@@ -1,6 +1,8 @@
 """AdventOfCode2019 - Day 1"""
+import functools
 
 
+@functools.lru_cache(maxsize=None)
 def fuel_from_mass1(mass):
     """Calculate the required fuel for a module based on its mass."""
     return mass // 3 - 2
