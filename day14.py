@@ -1,7 +1,6 @@
 """AdventOfCode2019 - Day 14"""
 import math
 import collections
-import functools
 
 Term = collections.namedtuple("Term", "count name")
 Reaction = collections.namedtuple("Reaction", "reactants product")
@@ -27,7 +26,6 @@ def parse(puzzle_input):
 def minimum_ore(reactions, for_fuel):
     """Return the minimum ore needed to make the given amount of fuel given the reaction dict."""
 
-    @functools.lru_cache()  # memoization not necessary but gives a nice speed up
     def could_need(reactant, product):
         if product == "ORE":
             return False
