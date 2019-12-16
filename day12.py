@@ -5,7 +5,7 @@ import itertools
 import re
 import multiprocessing
 import functools
-from util import sign, lcm
+from util import sign, lcm_all
 
 Moon = collections.namedtuple("Moon", "pos vel")
 
@@ -78,4 +78,4 @@ def part2(moons):
     with multiprocessing.Pool(3) as pool:
         periods = pool.map(period_finder, range(3))
     # The overall period is the lcm of the period of the individual component systems.
-    return lcm(periods)
+    return lcm_all(periods)

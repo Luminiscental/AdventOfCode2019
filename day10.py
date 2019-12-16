@@ -2,6 +2,7 @@
 import collections
 import math
 import operator
+from util import ilen
 
 AsteroidField = collections.namedtuple("AsteroidField", "width height asteroids")
 
@@ -33,9 +34,11 @@ def raycast(field, location, direction):
 
 def count_visible(field, location, directions):
     """Count how many asteroids are visible from a given location in a field."""
-    return sum(
-        1 for direction in directions if raycast(field, location, direction) is not None
-    )
+
+    def sees_asteroid(direction):
+        return raycast(field, location, direction) is not None
+
+    return ilen(filter(sees_asteroid, directions))
 
 
 def parse(puzzle_input):

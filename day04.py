@@ -1,5 +1,5 @@
 """AdventOfCode2019 - Day 4"""
-from util import chain_lengths
+from util import chain_lengths, ilen
 
 
 def parse(puzzle_input):
@@ -11,17 +11,18 @@ def parse(puzzle_input):
 
 def part1(passwords):
     """Solve for the answer to part 1."""
-    return sum(
-        1
-        for password in passwords
-        if any(chain_length >= 2 for chain_length in chain_lengths(password))
-    )
+
+    def valid(password):
+        return any(chain >= 2 for chain in chain_lengths(password))
+
+    return ilen(filter(valid, passwords))
 
 
 def part2(passwords):
     """Solve for the answer to part 2."""
-    return sum(
-        1
-        for password in passwords
-        if any(chain_length == 2 for chain_length in chain_lengths(password))
-    )
+
+    def valid(password):
+        return any(chain == 2 for chain in chain_lengths(password))
+
+    return ilen(filter(valid, passwords))
+

@@ -4,6 +4,12 @@ import math
 import inspect
 import time
 import contextlib
+import itertools
+
+
+def ilen(iterable):
+    """Count the length of an iterable."""
+    return sum(1 for _ in iterable)
 
 
 @contextlib.contextmanager
@@ -35,17 +41,8 @@ def chunks_of(size, iterable):
 
 
 def chain_lengths(values):
-    """Returns an iterator over the lengths of chains of repeated values in a sequence."""
-    chain = 1
-    prev = values[0]
-    for value in values[1:]:
-        if value == prev:
-            chain = chain + 1
-        else:
-            yield chain
-            chain = 1
-            prev = value
-    yield chain
+    """Returns a generator of the lengths of chains of repeated values in a sequence."""
+    return (ilen(group) for _, group in itertools.groupby(values))
 
 
 def sign(number):
@@ -57,10 +54,11 @@ def sign(number):
     return 0
 
 
-def lcm(numbers):
-    """Return the lowest common multiple of a sequence of numbers."""
+def lcm(num1, num2):
+    """Return the lowest common multiple of a pair of integers."""
+    return num1 * num2 // math.gcd(num1, num2)
 
-    def lcm2(num1, num2):
-        return num1 * num2 // math.gcd(num1, num2)
 
-    return functools.reduce(lcm2, numbers)
+def lcm_all(numbers):
+    """Return the lowest common multiple of a sequence of integers."""
+    return functools.reduce(lcm, numbers)
