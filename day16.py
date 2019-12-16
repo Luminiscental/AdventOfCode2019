@@ -17,11 +17,10 @@ def get_fft(signal, idx):
     return abs(sum(coeff * number for coeff, number in terms)) % 10
 
 
-def apply_fft(signal):
+def apply_fft(signal, pool):
     """Apply the fft to an iterable signal."""
     calc_at_idx = functools.partial(get_fft, signal)
-    with multiprocessing.Pool() as pool:
-        return pool.map(calc_at_idx, range(len(signal)))
+    return pool.map(calc_at_idx, range(len(signal)))
 
 
 def display_signal(signal):
@@ -36,8 +35,9 @@ def parse(puzzle_input):
 
 def part1(signal):
     """Solve for the answer to part 1."""
-    for _ in range(100):
-        signal = apply_fft(signal)
+    with multiprocessing.Pool() as pool:
+        for _ in range(100):
+            signal = apply_fft(signal, pool)
     return display_signal(signal[:8])
 
 
