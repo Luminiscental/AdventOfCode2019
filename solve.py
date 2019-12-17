@@ -2,7 +2,7 @@
 import sys
 import importlib
 import requests
-import util
+from util import timer, apply_trim_args
 
 
 def day_module_name(day_num):
@@ -38,12 +38,12 @@ def run_day(day_num):
     puzzle_input = get_input(day_num)
     day_module = importlib.import_module(day_module_name(day_num))
     day_state = {}
-    with util.timer("parsing input"):
-        parsed_input = util.apply_trim_args(day_module.parse, puzzle_input, day_state)
-    with util.timer("running part 1"):
-        part1 = util.apply_trim_args(day_module.part1, parsed_input, day_state)
-    with util.timer("running part 2"):
-        part2 = util.apply_trim_args(day_module.part2, parsed_input, day_state)
+    with timer("parsing input"):
+        parsed_input = apply_trim_args(day_module.parse, puzzle_input, day_state)
+    with timer("running part 1"):
+        part1 = apply_trim_args(day_module.part1, parsed_input, day_state)
+    with timer("running part 2"):
+        part2 = apply_trim_args(day_module.part2, parsed_input, day_state)
     print()
     print(f"part1:\n\n{part1}\n")
     print(f"part2:\n\n{part2}\n")
@@ -61,14 +61,15 @@ def main():
             + f"$ python {sys.argv[0]} all # solves all days in the repo\n"
         )
         sys.exit(1)
-    if sys.argv[1:] == ["all"]:
-        day_num = 1
-        while has_day(day_num):
-            run_day(day_num)
-            day_num += 1
-        sys.exit(0)
-    for day_num in (int(arg) for arg in sys.argv[1:]):
-        run_day(day_num)
+    with timer("overall"):
+        if sys.argv[1:] == ["all"]:
+            day_num = 1
+            while has_day(day_num):
+                run_day(day_num)
+                day_num += 1
+        else:
+            for day_num in (int(arg) for arg in sys.argv[1:]):
+                run_day(day_num)
     sys.exit(0)
 
 
