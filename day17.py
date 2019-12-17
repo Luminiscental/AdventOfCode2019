@@ -15,7 +15,7 @@ Robot = collections.namedtuple("Robot", "pos facing")
 
 def find_programs(path):
     """Find a set of programs to execute a path that fit in memory.
-    :param path: is expected as a list of each (turn,distance) instruction.
+    :param path: expected as a list of each (turn,distance) instruction.
     :return: a tuple (main, program A, program B, program C).
     """
     subpath_names = ["A", "B", "C"]
@@ -45,7 +45,8 @@ def find_programs(path):
 
 def find_path(scaffolds, robot):
     """Find a path to cover a set of scaffolds.
-    :param scaffolds: is expected as a set of (x, y) tuples representing where the scaffolds are.
+    :param scaffolds: expected as a set of (x, y) tuples representing where the scaffolds are.
+    :param robot: the initial robot state.
     :return: a list of instruction strings like "L,13".
     """
     curr_pos = robot.pos
@@ -86,7 +87,8 @@ def find_path(scaffolds, robot):
 
 def queue_programs(interpretor, programs):
     """Queue input to submit a sequence of programs to the robot.
-    :param programs: is expected as a sequence of programs, where each program is a list of string
+    :param interpretor: the intcode interpretor to queue as input for.
+    :param programs: expected as a sequence of programs, where each program is a list of string
     instructions. The instructions are comma delimited and newline terminated by this function,
     then converted to ascii and queued as input to the program.
     """
@@ -98,7 +100,7 @@ def queue_programs(interpretor, programs):
 
 def interpret_image(image_string):
     """Parse the image to the set of scaffolds and initial robot state.
-    :param image_string: is expected the program output joined to a string.
+    :param image_string: expected the program output joined to a string.
     :return: a tuple (robot, scaffolds) with the initial robot state and scaffolds set.
     """
     scaffolds = set()
