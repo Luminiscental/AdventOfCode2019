@@ -7,6 +7,26 @@ import contextlib
 import itertools
 
 
+def replace_occurences(sequence, subsequence, replacement):
+    """Replace occurences of a subsequence in a sequence."""
+    while True:
+        for i in range(len(sequence)):
+            if sequence[i : i + len(subsequence)] == subsequence:
+                sequence[i : i + len(subsequence)] = replacement
+                break
+        else:
+            break
+
+
+def count_occurences(sequence, subsequence):
+    """Count occurences of a subsequence in a sequence."""
+    return ilen(
+        i
+        for i in range(len(sequence))
+        if sequence[i : i + len(subsequence)] == subsequence
+    )
+
+
 def ilen(iterable):
     """Count the length of an iterable."""
     return sum(1 for _ in iterable)

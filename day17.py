@@ -2,6 +2,7 @@
 import collections
 import operator
 import intcode
+from util import count_occurences, replace_occurences
 from day02 import parse
 
 DIRECTIONS = {"<": (-1, 0), ">": (1, 0), "^": (0, -1), "v": (0, 1)}
@@ -13,17 +14,40 @@ Robot = collections.namedtuple("Robot", "pos facing")
 
 
 def find_programs(path):
-    """Find a set of programs to execute a path that fit in memory."""
-    # Did by hand...
-    main = "A,C,A,B,C,A,B,C,A,B"
-    prog_a = "L,12,L,12,L,6,L,6"
-    prog_b = "L,12,L,6,R,12,R,8"
-    prog_c = "R,8,R,4,L,12"
-    return main, prog_a, prog_b, prog_c
+    """Find a set of programs to execute a path that fit in memory.
+    :param path: is expected as a list of each (turn,distance) instruction.
+    :return: a tuple (main, program A, program B, program C).
+    """
+    subpath_names = ["A", "B", "C"]
+    subpaths = {}
+
+    def subpath_quality(subpath):
+        # If it overlaps a previous subpath we don't want it
+        if any(elem in subpath_names for elem in subpath):
+            return 0
+        # Otherwise take the one that appears most often
+        return count_occurences(path, subpath)
+
+    for subpath_name in subpath_names:
+        # Start at the first non-covered instruction
+        start = next(i for i, elem in enumerate(path) if elem not in subpath_names)
+        # Choose the best subpath of length 3-6 (reversed to prefer longer paths)
+        candidates = (path[start : start + length] for length in reversed(range(3, 6)))
+        best_subpath = max(candidates, key=subpath_quality)
+        # Substitute the subpath into path
+        replace_occurences(path, best_subpath, [subpath_name])
+        # Record the subpath
+        subpaths[subpath_name] = best_subpath
+
+    assert all(elem in subpath_names for elem in path), "could not find a coverage"
+    return (path, *subpaths.values())
 
 
 def find_path(scaffolds, robot):
-    """Find a path to cover a set of scaffolds."""
+    """Find a path to cover a set of scaffolds.
+    :param scaffolds: is expected as a set of (x, y) tuples representing where the scaffolds are.
+    :return: a list of instruction strings like "L,13".
+    """
     curr_pos = robot.pos
     curr_facing = robot.facing
     assert curr_pos in scaffolds, "invalid starting position"
@@ -41,7 +65,7 @@ def find_path(scaffolds, robot):
             curr_pos = next_pos
         else:
             if last_turn is not None:
-                path.append((last_turn, steps))
+                path.append(f"{last_turn},{steps}")
                 steps = 0
             else:
                 assert steps == 0, "didn't  turn initially"
@@ -61,16 +85,22 @@ def find_path(scaffolds, robot):
 
 
 def queue_programs(interpretor, programs):
-    """Queue input to submit a sequence of programs to the robot."""
+    """Queue input to submit a sequence of programs to the robot.
+    :param programs: is expected as a sequence of programs, where each program is a list of string
+    instructions. The instructions are comma delimited and newline terminated by this function,
+    then converted to ascii and queued as input to the program.
+    """
     for program in programs:
-        assembled = [ord(c) for c in program]
-        assert len(assembled) < 20, "Program was too long"
+        assembled = [ord(c) for c in ",".join(program) + "\n"]
+        assert len(assembled) <= 20, "Program was too long"
         interpretor.queue_inputs(assembled)
-        interpretor.queue_input(ord("\n"))
 
 
 def interpret_image(image_string):
-    """Parse the image to find the scaffolds and robot."""
+    """Parse the image to the set of scaffolds and initial robot state.
+    :param image_string: is expected the program output joined to a string.
+    :return: a tuple (robot, scaffolds) with the initial robot state and scaffolds set.
+    """
     scaffolds = set()
     robot = None
     for y_idx, row in enumerate(image_string.splitlines()):
@@ -85,9 +115,10 @@ def interpret_image(image_string):
 
 
 def calibrate(scaffolds):
-    """Find the calibrating alignment sum for a set of scaffolds."""
+    """Calculate the alignment sum for a set of scaffolds."""
     align_sum = 0
     for scaff_x, scaff_y in scaffolds:
+        # Count scaffolds that are adjacent to another scaffold in every direction
         if all(
             (scaff_x + dx, scaff_y + dy) in scaffolds
             for dx, dy in ((1, 0), (0, 1), (-1, 0), (0, -1))
@@ -98,23 +129,31 @@ def calibrate(scaffolds):
 
 def part1(program, state):
     """Solve for the answer to part 1."""
+    # Run the program to collect the output image
     interpretor = intcode.Interpretor()
     while interpretor.run(program):
         pass
+    # Join all output into the image string
     image_string = "".join(chr(code) for code in interpretor.output_queue)
+    # Store the initial robot state and scaffold set for part 2
     state["robot"], state["scaffolds"] = interpret_image(image_string)
+    # Calculate the alignment sum
     return calibrate(state["scaffolds"])
 
 
 def part2(program, state):
     """Solve for the answer to part 2."""
+    # Find a path to cover the scaffolds
     path = find_path(state["scaffolds"], state["robot"])
-    main, prog_a, prog_b, prog_c = find_programs(path)
+    # Find programs that fit in memory to cover the path
+    programs = find_programs(path)
+    # Queue the programs to be run
     interpretor = intcode.Interpretor()
-    queue_programs(interpretor, [main, prog_a, prog_b, prog_c])
-    interpretor.queue_input(ord("n"))
-    interpretor.queue_input(ord("\n"))
+    queue_programs(interpretor, [*programs, "n"])
+    # Wake up the robot
     program[0] = 2
+    # Run the programs
     while interpretor.run(program):
         pass
+    # Get the last output (the amount of dust collected)
     return interpretor.output_queue.pop()
