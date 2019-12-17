@@ -146,6 +146,10 @@ class Interpretor:
         """Queue a value to give as input automatically."""
         self.input_queue.append(value)
 
+    def queue_inputs(self, iterable):
+        """Queue all inputs from an iterable."""
+        self.input_queue.extend(iterable)
+
     def receive_input(self, input_value):
         """Send input to the interpretor."""
         assert self.state == RunState.WAITING_INPUT, "unexpected input"

@@ -25,4 +25,3 @@ def part2(passwords):
         return any(chain == 2 for chain in chain_lengths(password))
 
     return ilen(filter(valid, passwords))
-
