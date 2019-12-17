@@ -118,7 +118,6 @@ def calibrate(scaffolds):
     """Calculate the alignment sum for a set of scaffolds."""
     align_sum = 0
     for scaff_x, scaff_y in scaffolds:
-        # Count scaffolds that are adjacent to another scaffold in every direction
         if all(
             (scaff_x + dx, scaff_y + dy) in scaffolds
             for dx, dy in ((1, 0), (0, 1), (-1, 0), (0, -1))
@@ -129,31 +128,22 @@ def calibrate(scaffolds):
 
 def part1(program, state):
     """Solve for the answer to part 1."""
-    # Run the program to collect the output image
+    # Run the program to collect all the output
     interpretor = intcode.Interpretor()
     while interpretor.run(program):
         pass
-    # Join all output into the image string
     image_string = "".join(chr(code) for code in interpretor.output_queue)
-    # Store the initial robot state and scaffold set for part 2
     state["robot"], state["scaffolds"] = interpret_image(image_string)
-    # Calculate the alignment sum
     return calibrate(state["scaffolds"])
 
 
 def part2(program, state):
     """Solve for the answer to part 2."""
-    # Find a path to cover the scaffolds
     path = find_path(state["scaffolds"], state["robot"])
-    # Find programs that fit in memory to cover the path
     programs = find_programs(path)
-    # Queue the programs to be run
     interpretor = intcode.Interpretor()
     queue_programs(interpretor, [*programs, "n"])
-    # Wake up the robot
     program[0] = 2
-    # Run the programs
     while interpretor.run(program):
         pass
-    # Get the last output (the amount of dust collected)
     return interpretor.output_queue.pop()
