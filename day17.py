@@ -100,7 +100,7 @@ def queue_programs(interpretor, programs):
 
 def interpret_image(image_string):
     """Parse the image to the set of scaffolds and initial robot state.
-    :param image_string: expected the program output joined to a string.
+    :param image_string: expected as the program output joined to a string.
     :return: a tuple (robot, scaffolds) with the initial robot state and scaffolds set.
     """
     scaffolds = set()
