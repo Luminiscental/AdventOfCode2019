@@ -65,7 +65,7 @@ def part1(maze, state):
         mark_paths(maze, key, keys, doors, paths)
 
     # Find the shortest tour, assuming that each segment is a shortest path if you ignore doors.
-    # This assumption holds because the inputs we get are trees.
+    # This assumption holds because the inputs we get have simple paths between the keys.
     @functools.lru_cache(maxsize=None)
     def shortest_tour(start, unlocked=frozenset()):
         """Find the shortest path from a starting position to get all keys."""
