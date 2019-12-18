@@ -34,26 +34,21 @@ def part1(maze):
         """Mark the distances and passed doors/keys to every door/key given a starting position."""
         # Use BFS
         queue = collections.deque(
-            [Path(end=start_pos, dist=0, doors=set(), keys=set())]
+            [Path(end=start_pos, dist=0, doors=frozenset(), keys=frozenset())]
         )
         visited = set([start_pos])
         while queue:
-            curr = queue.pop()
-            if curr.end in keys | doors:
+            curr = queue.popleft()
+            next_doors, next_keys = curr.doors, curr.keys
+            if curr.end in (keys | doors) and curr.dist > 0:
                 paths[start_pos, curr.end] = curr
+                next_doors |= {curr.end} & doors
+                next_keys |= {curr.end} & keys
+            visited.add(curr.end)
             for offset in ((1, 0), (-1, 0), (0, 1), (0, -1)):
                 adj_pos = tuple(map(operator.add, curr.end, offset))
-                if adj_pos in visited or maze[adj_pos] == "#":
-                    continue
-                visited.add(adj_pos)
-                queue.append(
-                    Path(
-                        adj_pos,
-                        curr.dist + 1,
-                        curr.doors | {curr.end} & doors,
-                        curr.keys | {curr.end} & keys,
-                    )
-                )
+                if maze[adj_pos] != "#" and adj_pos not in visited:
+                    queue.append(Path(adj_pos, curr.dist + 1, next_doors, next_keys))
 
     mark_paths(start)
     for pos in keys:
