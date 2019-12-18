@@ -1,45 +1,10 @@
 """AdventOfCode2019 - Day 18"""
 import collections
 import operator
-import itertools
 import functools
 
-
-class CombDict(dict):
-    """Dictionary storing values for key-key pairs."""
-
-    def __getitem__(self, pair):
-        assert isinstance(pair, tuple) and len(pair) == 2, "invalid key for CombDict"
-        return (
-            super().__getitem__(pair)
-            if pair in self
-            else super().__getitem__(tuple(reversed(pair)))
-        )
-
-
-def get_path(maze, traversable, doors, start, target):
-    """Using BFS get the shortest path, returning the distance and the doors traversed."""
-    if maze[start] not in traversable:
-        raise ValueError("Invalid start position")
-    Node = collections.namedtuple("Node", "pos dist doors")
-    visited = set([start])
-    queue = collections.deque([Node(pos=start, dist=0, doors=set())])
-    while queue:
-        curr = queue.pop()
-        if curr.pos == target:
-            return curr.dist, curr.doors
-        for offset in ((0, 1), (1, 0), (0, -1), (-1, 0)):
-            adjacent = tuple(map(operator.add, curr.pos, offset))
-            if maze[adjacent] in traversable | doors and adjacent not in visited:
-                queue.append(
-                    Node(
-                        pos=adjacent,
-                        dist=curr.dist + 1,
-                        doors=curr.doors | {maze[adjacent]} & doors,
-                    )
-                )
-                visited.add(adjacent)
-    raise ValueError(f"No path found for {maze[start]} to {maze[target]}")
+Path = collections.namedtuple("Path", "end dist doors keys")
+Tour = collections.namedtuple("Tour", "pos keys")
 
 
 def parse(puzzle_input):
@@ -56,43 +21,58 @@ def part1(maze):
     assert list(maze.values()).count("@") == 1, "start position ambiguous"
     start = next(pos for pos, tile in maze.items() if tile == "@")
     keys = {pos for pos, tile in maze.items() if tile.islower()}
-    key_names = {maze[key] for key in keys}
-    door_names = set(map(str.upper, key_names))
-    dist_dict = CombDict()
-    block_dict = CombDict()
-    for key1, key2 in itertools.combinations(keys, 2):
-        dist_dict[key1, key2], block_dict[key1, key2] = get_path(
-            maze,
-            traversable={".", "@"} | key_names,
-            doors=door_names,
-            start=key1,
-            target=key2,
+    doors = {pos for pos, tile in maze.items() if tile.isupper()}
+    key_for = {
+        door_pos: key_pos
+        for key_pos in keys
+        for door_pos in doors
+        if maze[door_pos] == maze[key_pos].upper()
+    }
+    paths = {}
+
+    def mark_paths(start_pos):
+        """Mark the distances and passed doors/keys to every door/key given a starting position."""
+        # Use BFS
+        queue = collections.deque(
+            [Path(end=start_pos, dist=0, doors=set(), keys=set())]
         )
-    accessible = {}
-    for key in keys:
-        dist, blocked = get_path(
-            maze,
-            traversable={".", "@"} | key_names,
-            doors=door_names,
-            start=start,
-            target=key,
-        )
-        if not blocked:
-            accessible[key] = dist
+        visited = set([start_pos])
+        while queue:
+            curr = queue.pop()
+            if curr.end in keys | doors:
+                paths[start_pos, curr.end] = curr
+            for offset in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                adj_pos = tuple(map(operator.add, curr.end, offset))
+                if adj_pos in visited or maze[adj_pos] == "#":
+                    continue
+                visited.add(adj_pos)
+                queue.append(
+                    Path(
+                        adj_pos,
+                        curr.dist + 1,
+                        curr.doors | {curr.end} & doors,
+                        curr.keys | {curr.end} & keys,
+                    )
+                )
+
+    mark_paths(start)
+    for pos in keys:
+        mark_paths(pos)
 
     @functools.lru_cache(maxsize=None)
-    def shortest_from(key, unlocked=frozenset()):
-        unlocked = unlocked | {key}
-        if keys == unlocked:
+    def shortest_tour(start, unlocked=frozenset()):
+        """Find the shortest path from a starting position to get all keys."""
+        # Use DFS
+        remaining = keys - unlocked
+        if not remaining:
             return 0
-        unlocked_doors = {maze[key].upper() for key in unlocked}
         return min(
-            dist_dict[key, other_key] + shortest_from(other_key, unlocked)
-            for other_key in keys - unlocked
-            if all(door in unlocked_doors for door in block_dict[key, other_key])
+            path.dist + shortest_tour(path.end, unlocked | path.keys | {path.end})
+            for path in [paths[start, key] for key in remaining]
+            if all(key_for[door] in unlocked for door in path.doors)
         )
 
-    return min(dist + shortest_from(key) for key, dist in accessible.items())
+    return shortest_tour(start)
 
 
 def part2(maze):
