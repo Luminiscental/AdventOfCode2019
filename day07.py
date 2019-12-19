@@ -1,43 +1,49 @@
 """AdventOfCode2019 - Day 7"""
+import collections
 import itertools
 import intcode
 from day02 import parse
 
+Amplifier = collections.namedtuple("Amplifier", "interpretor output")
 
-def pipeline(program, amplifiers, phase_settings, loop=False):
+
+def pipeline(program, amplifier_count, phase_settings, loop=False):
     """Run a signal that starts at 0 through a pipeline of amplifiers."""
-    # setup phase settings
+    # Create the amplifiers
+    amplifiers = [
+        Amplifier(interpretor, output=interpretor.run(program))
+        for _ in range(amplifier_count)
+        for interpretor in [intcode.Interpretor()]
+    ]
+    # Setup phase settings
     for amplifier, phase_setting in zip(amplifiers, phase_settings):
-        amplifier.queue_input(phase_setting)
-    # run the signal through
+        amplifier.interpretor.queue_input(phase_setting)
+    # Run the signal through
     signal = 0
     curr = 0
-    while curr < len(amplifiers) and amplifiers[curr].run(program):
-        if amplifiers[curr].waiting_input():
-            amplifiers[curr].receive_input(signal)
-        for curr_output in amplifiers[curr].output():
-            signal = curr_output
-            curr += 1
-            if loop:
-                curr = curr % len(amplifiers)
-    # we exit early (between output and halting) so reset manually
-    for amplifier in amplifiers:
-        amplifier.reset()
+    while curr < len(amplifiers):
+        amplifiers[curr].interpretor.queue_input(signal)
+        try:
+            signal = next(amplifiers[curr].output)
+        except StopIteration:
+            break
+        curr += 1
+        if loop:
+            curr = curr % len(amplifiers)
     return signal
 
 
-def part1(opcodes, state):
+def part1(opcodes):
     """Solve for the answer to part 1."""
-    state["amplifiers"] = [intcode.Interpretor() for _ in range(5)]
     return max(
-        pipeline(opcodes, state["amplifiers"], phase_settings)
+        pipeline(opcodes, 5, phase_settings)
         for phase_settings in itertools.permutations(range(5))
     )
 
 
-def part2(opcodes, state):
+def part2(opcodes):
     """Solve for the answer to part 2."""
     return max(
-        pipeline(opcodes, state["amplifiers"], phase_settings, loop=True)
+        pipeline(opcodes, 5, phase_settings, loop=True)
         for phase_settings in itertools.permutations(range(5, 10))
     )

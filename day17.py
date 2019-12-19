@@ -2,7 +2,7 @@
 import collections
 import operator
 import intcode
-from util import count_occurences, replace_occurences
+from util import count_occurences, replace_occurences, ilast
 from day02 import parse
 
 DIRECTIONS = {"<": (-1, 0), ">": (1, 0), "^": (0, -1), "v": (0, 1)}
@@ -132,9 +132,7 @@ def part1(program, state):
     """Solve for the answer to part 1."""
     # Run the program to collect all the output
     interpretor = intcode.Interpretor()
-    while interpretor.run(program):
-        pass
-    image_string = "".join(chr(code) for code in interpretor.output_queue)
+    image_string = "".join(chr(code) for code in interpretor.run(program))
     state["robot"], state["scaffolds"] = interpret_image(image_string)
     return calibrate(state["scaffolds"])
 
@@ -146,6 +144,4 @@ def part2(program, state):
     interpretor = intcode.Interpretor()
     queue_programs(interpretor, [*programs, "n"])
     program[0] = 2
-    while interpretor.run(program):
-        pass
-    return interpretor.output_queue.pop()
+    return ilast(interpretor.run(program))

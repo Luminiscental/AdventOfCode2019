@@ -10,7 +10,7 @@ class Robot:
 
     def __init__(self, program):
         self.program = program
-        self.interpretor = intcode.Interpretor()
+        self.interpretor = intcode.Interpretor(input_from=self.check)
         self.panels = set()  # the set of white panels
         self.painted = set()  # the set of panels that were ever painted
         self.position = 0, 0
@@ -42,12 +42,9 @@ class Robot:
 
     def run(self):
         """Run the painting program."""
-        while self.interpretor.run(self.program):
-            if self.interpretor.waiting_input():
-                self.interpretor.receive_input(self.check())
-            for color, direction in self.interpretor.output(group_size=2):
-                self.paint(color)
-                self.turn(direction)
+        for color, direction in self.interpretor.run(self.program, group=2):
+            self.paint(color)
+            self.turn(direction)
 
     def display_panels(self):
         """Return a string representation of the painted panels."""

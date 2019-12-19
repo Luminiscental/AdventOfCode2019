@@ -32,6 +32,14 @@ def ilen(iterable):
     return sum(1 for _ in iterable)
 
 
+def ilast(iterable):
+    """Return the last value yielded by an iterable, or None."""
+    item = None
+    for item in iterable:
+        pass
+    return item
+
+
 @contextlib.contextmanager
 def timer(desc):
     """Context manager for timing a block of code once and printing the time."""

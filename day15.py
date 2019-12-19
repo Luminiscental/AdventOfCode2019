@@ -15,7 +15,7 @@ class Robot:
 
     def __init__(self, program):
         self.interpretor = intcode.Interpretor()
-        self.program = program
+        self.program_output = self.interpretor.run(program)
 
         self.pos = 0, 0
         self.station = None
@@ -41,9 +41,7 @@ class Robot:
         if reverse:
             direction = (direction + 2) % 4
         self.interpretor.queue_input(DIRECTION_TO_INPUT[direction])
-        while self.interpretor.run(self.program):
-            for output in self.interpretor.output():
-                return self.update_state(output, direction)
+        return self.update_state(next(self.program_output), direction)
 
     def explore(self):
         """Explore the maze until no new squares can be found using DFS."""

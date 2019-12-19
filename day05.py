@@ -7,9 +7,7 @@ def run_tests(program, input_constant):
     """Run the tests giving a certain input."""
     interpretor = intcode.Interpretor()
     interpretor.queue_input(input_constant)
-    while interpretor.run(program):
-        pass  # we don't expect anymore input to be required
-    outputs = list(interpretor.output_queue)
+    outputs = list(interpretor.run(program))
     if any(output != 0 for output in outputs[:-1]):
         print(f"WARNING: test failed")
     return outputs[-1]

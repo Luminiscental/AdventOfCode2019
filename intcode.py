@@ -1,183 +1,169 @@
 """Module for the Intcode interpretor."""
 import collections
-import enum
 
-# action is a function which takes the arguments and returns whether a jump occured
-Opcode = collections.namedtuple("Opcode", "arg_count action")
-JUMP, NO_JUMP = CONTINUE, HALT = True, False
-REFERENCE_MODE, IMMEDIATE_MODE, RELATIVE_MODE = 0, 1, 2
+OP_ADD = 1
+OP_MUL = 2
+OP_INPUT = 3
+OP_OUTPUT = 4
+OP_JUMP_IF_TRUE = 5
+OP_JUMP_IF_FALSE = 6
+OP_LESS = 7
+OP_EQ = 8
+OP_SHIFT = 9
+OP_HALT = 99
 
-
-class RunState(enum.Enum):
-    """State enum for the intcode interpretor."""
-
-    IDLE = 0
-    RUNNING = 1
-    WAITING_INPUT = 2
+REFERENCE_MODE = 0
+IMMEDIATE_MODE = 1
+RELATIVE_MODE = 2
 
 
 class Interpretor:
-    """Class for the intcode interpretor."""
+    """Class for intcode interpretors."""
 
-    def __init__(self):
+    def __init__(self, input_from=None):
         self.memory = collections.defaultdict(int)
-        self.ipointer = 0
-        self.rel_base = 0
-        self.state = RunState.IDLE
+        self.relative_base = 0
         self.input_queue = collections.deque()
-        self.input_loc = None
-        self.output_queue = collections.deque()
-        self.opcodes = {
-            1: Opcode(arg_count=3, action=self._calculate(lambda x, y: x + y)),
-            2: Opcode(arg_count=3, action=self._calculate(lambda x, y: x * y)),
-            3: Opcode(arg_count=1, action=self._get_input),
-            4: Opcode(arg_count=1, action=self._put_output),
-            5: Opcode(arg_count=2, action=self._jump_if(lambda x: x != 0)),
-            6: Opcode(arg_count=2, action=self._jump_if(lambda x: x == 0)),
-            7: Opcode(arg_count=3, action=self._calculate(lambda x, y: x < y)),
-            8: Opcode(arg_count=3, action=self._calculate(lambda x, y: x == y)),
-            9: Opcode(arg_count=1, action=self._shift_rel_base),
-        }
+        self.input_func = input_from
+        self.instr_idx = 0
 
-    def _calculate(self, func):
-        def action(*args):
-            self._set(args[-1], func(*map(self._get, args[:-1])))
-            return NO_JUMP
+    def reset(self):
+        """Reset memory and state."""
+        self.memory.clear()
+        self.relative_base = 0
+        self.input_queue.clear()
+        self.instr_idx = 0
 
-        return action
+    def load_program(self, program):
+        """Load a program into the start of memory."""
+        for idx, val in enumerate(program):
+            self.memory[idx] = val
 
-    def _get_input(self, arg1):
-        self.state = RunState.WAITING_INPUT
-        self.input_loc = arg1
-        if self.input_queue:
-            self.receive_input(self.input_queue.popleft())
-        return NO_JUMP
+    def queue_input(self, value):
+        """Queue a value to give as input."""
+        self.input_queue.append(value)
 
-    def _put_output(self, arg1):
-        self.output_queue.append(self._get(arg1))
-        return NO_JUMP
+    def queue_inputs(self, iterable):
+        """Queue an iterable sequence of values to give as input."""
+        self.input_queue.extend(iterable)
 
-    def _jump_if(self, func):
-        def action(*args):
-            if func(*map(self._get, args[:-1])):
-                self.ipointer = self._get(args[-1])
-                return JUMP
-            return NO_JUMP
+    def run(self, program, group=1):
+        """Run a program, returns a generator which yields output values."""
+        output_queue = []
+        self.load_program(program)
+        while True:
+            instr = self.memory[self.instr_idx]
+            operation = instr % 100
+            parameter_modes = instr // 100
+            if operation == OP_ADD:
+                self._add(parameter_modes)
+            elif operation == OP_MUL:
+                self._mul(parameter_modes)
+            elif operation == OP_INPUT:
+                self._load_input(parameter_modes)
+            elif operation == OP_OUTPUT:
+                yield from self._get_output(parameter_modes, output_queue, group)
+            elif operation == OP_JUMP_IF_TRUE:
+                self._jump_if_true(parameter_modes)
+            elif operation == OP_JUMP_IF_FALSE:
+                self._jump_if_false(parameter_modes)
+            elif operation == OP_LESS:
+                self._less(parameter_modes)
+            elif operation == OP_EQ:
+                self._eq(parameter_modes)
+            elif operation == OP_SHIFT:
+                self._shift(parameter_modes)
+            elif operation == OP_HALT:
+                break
+            else:
+                raise ValueError(f"Unknown opcode {operation}")
 
-        return action
+    def _set(self, loc, val):
+        idx, mode = loc
+        if mode == REFERENCE_MODE:
+            self.memory[idx] = val
+        elif mode == IMMEDIATE_MODE:
+            raise ValueError("Cannot write in immediate mode")
+        elif mode == RELATIVE_MODE:
+            self.memory[self.relative_base + idx] = val
+        else:
+            raise ValueError(f"Unknown parameter mode {mode}")
 
-    def _shift_rel_base(self, arg1):
-        self.rel_base += self._get(arg1)
-        return NO_JUMP
-
-    def _get(self, arg):
-        mode, idx = arg
+    def _get(self, loc):
+        idx, mode = loc
         if mode == REFERENCE_MODE:
             return self.memory[idx]
         if mode == IMMEDIATE_MODE:
             return idx
         if mode == RELATIVE_MODE:
-            return self.memory[self.rel_base + idx]
-        raise ValueError("Unknown parameter mode " + str(mode))
+            return self.memory[self.relative_base + idx]
+        raise ValueError(f"Unknown parameter mode {mode}")
 
-    def _set(self, arg, value):
-        mode, idx = arg
-        if mode == REFERENCE_MODE:
-            self.memory[idx] = value
-        elif mode == IMMEDIATE_MODE:
-            raise ValueError("Cannot write in immediate mode")
-        elif mode == RELATIVE_MODE:
-            self.memory[self.rel_base + idx] = value
+    def _add(self, parameter_modes):
+        in1 = self.memory[self.instr_idx + 1], parameter_modes % 10
+        in2 = self.memory[self.instr_idx + 2], parameter_modes // 10 % 10
+        out = self.memory[self.instr_idx + 3], parameter_modes // 100 % 10
+        self.instr_idx += 4
+        self._set(out, self._get(in1) + self._get(in2))
+
+    def _mul(self, parameter_modes):
+        in1 = self.memory[self.instr_idx + 1], parameter_modes % 10
+        in2 = self.memory[self.instr_idx + 2], parameter_modes // 10 % 10
+        out = self.memory[self.instr_idx + 3], parameter_modes // 100 % 10
+        self.instr_idx += 4
+        self._set(out, self._get(in1) * self._get(in2))
+
+    def _load_input(self, parameter_modes):
+        out = self.memory[self.instr_idx + 1], parameter_modes % 10
+        self.instr_idx += 2
+        val = (
+            self.input_func()
+            if self.input_func is not None
+            else self.input_queue.popleft()
+        )
+        self._set(out, val)
+
+    def _get_output(self, parameter_modes, output_queue, group):
+        out = self.memory[self.instr_idx + 1], parameter_modes % 10
+        self.instr_idx += 2
+        output = self._get(out)
+        if group == 1:
+            yield output
         else:
-            raise ValueError("Unknown parameter mode " + str(mode))
+            output_queue.append(output)
+            if len(output_queue) == group:
+                yield tuple(output_queue)
+                output_queue.clear()
 
-    def output(self, group_size=1):
-        """Generator for output values. If a group_size is specified outputs come in tuples."""
-        while len(self.output_queue) >= group_size:
-            if group_size == 1:
-                yield self.output_queue.popleft()
-            else:
-                yield tuple(self.output_queue.popleft() for _ in range(group_size))
+    def _jump_if_true(self, parameter_modes):
+        cond = self.memory[self.instr_idx + 1], parameter_modes % 10
+        targ = self.memory[self.instr_idx + 2], parameter_modes // 10 % 10
+        self.instr_idx += 3
+        if self._get(cond) != 0:
+            self.instr_idx = self._get(targ)
 
-    def waiting_input(self):
-        """Check if the interpretor is waiting for input."""
-        return self.state == RunState.WAITING_INPUT
+    def _jump_if_false(self, parameter_modes):
+        cond = self.memory[self.instr_idx + 1], parameter_modes % 10
+        targ = self.memory[self.instr_idx + 2], parameter_modes // 10 % 10
+        self.instr_idx += 3
+        if self._get(cond) == 0:
+            self.instr_idx = self._get(targ)
 
-    def queue_input(self, value):
-        """Queue a value to give as input automatically."""
-        self.input_queue.append(value)
+    def _less(self, parameter_modes):
+        in1 = self.memory[self.instr_idx + 1], parameter_modes % 10
+        in2 = self.memory[self.instr_idx + 2], parameter_modes // 10 % 10
+        out = self.memory[self.instr_idx + 3], parameter_modes // 100 % 10
+        self.instr_idx += 4
+        self._set(out, int(self._get(in1) < self._get(in2)))
 
-    def queue_inputs(self, iterable):
-        """Queue all inputs from an iterable."""
-        self.input_queue.extend(iterable)
+    def _eq(self, parameter_modes):
+        in1 = self.memory[self.instr_idx + 1], parameter_modes % 10
+        in2 = self.memory[self.instr_idx + 2], parameter_modes // 10 % 10
+        out = self.memory[self.instr_idx + 3], parameter_modes // 100 % 10
+        self.instr_idx += 4
+        self._set(out, int(self._get(in1) == self._get(in2)))
 
-    def receive_input(self, input_value):
-        """Send input to the interpretor."""
-        assert self.state == RunState.WAITING_INPUT, "unexpected input"
-        assert self.input_loc is not None
-        self._set(self.input_loc, input_value)
-        self.input_loc = None
-        self.state = RunState.RUNNING
-
-    @profile
-    def _step(self):
-        instruction = self.memory[self.ipointer]
-        opcode_idx = instruction % 100
-        mode_section = instruction // 100
-        if opcode_idx == 99:
-            return HALT
-        if opcode_idx not in self.opcodes:
-            raise ValueError(f"Unknown opcode {opcode_idx}")
-        opcode = self.opcodes[opcode_idx]
-
-        arg_start = self.ipointer + 1
-        args = [self.memory[arg_start + arg_idx] for arg_idx in range(opcode.arg_count)]
-        param_modes = [(mode_section // 10 ** n) % 10 for n in range(opcode.arg_count)]
-
-        if opcode.action(*zip(param_modes, args)) == NO_JUMP:
-            self.ipointer = self.ipointer + opcode.arg_count + 1
-        return CONTINUE
-
-    def load_program(self, opcodes):
-        """Clear memory and put a program into it."""
-        self.memory.clear()
-        for i, opcode in enumerate(opcodes):
-            self.memory[i] = opcode
-
-    def run(self, opcodes):
-        """Run a list of opcodes, returning False after halting.
-
-        usage looks like:
-        ```
-        # Queue an input to give
-        interpretor.queue_input(37)
-
-        # Run program until a halt instruction
-        while interpretor.run(program):
-
-            # Handle input when the queue is empty
-            if interpretor.waiting_input():
-                interpretor.receive_input(my_input)
-
-            # Handle outputs in groups of 3
-            for output1, output2, output3 in interpretor.output(group_size=3):
-                my_output_handler(output1, output2, output3)
-        ```
-        """
-        if self.waiting_input():
-            raise ValueError("Input required to continue running!")
-        if self.state == RunState.IDLE:
-            self.ipointer = 0
-            self.load_program(opcodes)
-        self.state = RunState.RUNNING
-        while self._step():
-            if self.waiting_input() or self.output_queue:
-                return CONTINUE
-        self.state = RunState.IDLE
-        return HALT
-
-    def reset(self):
-        """Reset the interpretor to the default state."""
-        self.state = RunState.IDLE
-        self.ipointer = 0
-        self.memory.clear()
+    def _shift(self, parameter_modes):
+        offset = self.memory[self.instr_idx + 1], parameter_modes % 10
+        self.instr_idx += 2
+        self.relative_base += self._get(offset)

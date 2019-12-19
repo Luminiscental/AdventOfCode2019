@@ -12,7 +12,7 @@ class Game:
 
     def __init__(self, program):
         self.tiles = collections.defaultdict(int)
-        self.interpretor = intcode.Interpretor()
+        self.interpretor = intcode.Interpretor(input_from=self.choose_move)
         self.program = program
         self.score = 0
         self.player_x = 0
@@ -20,14 +20,11 @@ class Game:
 
     def run(self):
         """Run the game using self.choose_move."""
-        while self.interpretor.run(self.program):
-            for x_pos, y_pos, tile_id in self.interpretor.output(group_size=3):
-                if (x_pos, y_pos) == (-1, 0):
-                    self.score = tile_id
-                else:
-                    self.draw(x_pos, y_pos, tile_id)
-            if self.interpretor.waiting_input():
-                self.interpretor.receive_input(self.choose_move())
+        for x_pos, y_pos, tile_id in self.interpretor.run(self.program, group=3):
+            if (x_pos, y_pos) == (-1, 0):
+                self.score = tile_id
+            else:
+                self.draw(x_pos, y_pos, tile_id)
 
     def choose_move(self):
         """Decide whether to move left or move right or do nothing."""
