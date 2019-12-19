@@ -1,7 +1,7 @@
 """AdventOfCode2019 - Day 15"""
-import collections
 import operator
 import intcode
+from util import bfs
 from day02 import parse
 
 NORTH, EAST, SOUTH, WEST = tuple(range(4))
@@ -51,43 +51,27 @@ class Robot:
                 self.move(direction, reverse=True)
 
 
-def bfs(obstructed, *, start=(0, 0), target=None):
-    """Find the distance to a target, or until the maze is filled, using BFS."""
-    if (start in obstructed) or (target is not None and target in obstructed):
-        raise ValueError("No path exists")
-    Node = collections.namedtuple("Node", "pos dist")
-    visited = set()
-    max_dist = -1
-    queue = collections.deque()
-
-    queue.append(Node(pos=start, dist=0))
-    visited.add(start)
-    while queue:
-        curr = queue.pop()
-        if curr.pos == target:
-            return curr.dist
-        if curr.dist > max_dist:
-            max_dist = curr.dist
-        for offset in DIRECTION_TO_OFFSET.values():
-            adjacent = tuple(map(operator.add, curr.pos, offset))
-            if adjacent not in visited | obstructed:
-                queue.append(Node(pos=adjacent, dist=curr.dist + 1))
-                visited.add(adjacent)
-
-    if target is not None:
-        raise ValueError("No path to target found")
-    return max_dist
-
-
 def part1(program, state):
     """Solve for the answer to part 1."""
     robot = Robot(program)
     robot.explore()
-    state["walls"] = {tile for tile in robot.maze if robot.maze[tile] == HIT_WALL}
-    state["station"] = robot.station
-    return bfs(state["walls"], target=state["station"])
+    station = state["station"] = robot.station
+    maze = state["maze"] = robot.maze
+    distance, _ = bfs(
+        traversable_pred=lambda pos: maze[pos] != HIT_WALL,
+        start_node=(0, 0),
+        end_node=station,
+    )
+    return distance
 
 
 def part2(_, state):
     """Solve for the answer to part 2."""
-    return bfs(state["walls"], start=state["station"])
+    maze = state["maze"]
+    station = state["station"]
+    return bfs(
+        traversable_pred=lambda pos: maze[pos] != HIT_WALL,
+        start_node=station,
+        initial_state=-1,
+        state_updater=lambda pos, dist, curr_max: max(dist, curr_max),
+    )

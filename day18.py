@@ -3,6 +3,7 @@ import collections
 import operator
 import itertools
 import functools
+from util import bfs
 
 Path = collections.namedtuple("Path", "end dist doors keys")
 Tour = collections.namedtuple("Tour", "pos keys")
@@ -22,26 +23,26 @@ def mark_paths(maze, start_pos, keys, doors, paths):
     other key/door, assuming all the relevant doors are open. The results are written to paths
     as paths[start, end] = Path(...).
     """
-    # Use BFS
-    queue = collections.deque(
-        [Path(end=start_pos, dist=0, doors=frozenset(), keys=frozenset())]
+    # Do a BFS tracking which doors/keys we've walked over
+    State = collections.namedtuple("State", "doors keys")
+
+    def update_state(position, distance, old_state):
+        next_doors, next_keys = old_state.doors, old_state.keys
+        # If we've moved and hit a door/key keep track of our state
+        if distance > 0 and position in doors | keys:
+            paths[start_pos, position] = Path(
+                end=position, dist=distance, doors=next_doors, keys=next_keys
+            )
+            next_doors |= {position} & doors
+            next_keys |= {position} & keys
+        return State(next_doors, next_keys)
+
+    bfs(
+        state_updater=update_state,
+        initial_state=State(doors=frozenset(), keys=frozenset()),
+        traversable_pred=lambda pos: maze[pos] != "#",
+        start_node=start_pos,
     )
-    visited = set([start_pos])
-    while queue:
-        curr = queue.popleft()
-        next_doors, next_keys = curr.doors, curr.keys
-        # If we've found a key/door after moving store our path
-        if curr.end in (keys | doors) and curr.dist > 0:
-            paths[start_pos, curr.end] = curr
-            # Add the key/door to the child paths
-            next_doors |= {curr.end} & doors
-            next_keys |= {curr.end} & keys
-        visited.add(curr.end)
-        # Spawn child paths where there isn't a wall
-        for offset in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-            adj_pos = tuple(map(operator.add, curr.end, offset))
-            if maze[adj_pos] != "#" and adj_pos not in visited:
-                queue.append(Path(adj_pos, curr.dist + 1, next_doors, next_keys))
 
 
 def part1(maze, state):
