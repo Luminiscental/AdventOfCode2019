@@ -8,45 +8,6 @@ JUMP, NO_JUMP = CONTINUE, HALT = True, False
 REFERENCE_MODE, IMMEDIATE_MODE, RELATIVE_MODE = 0, 1, 2
 
 
-class Memory:
-    """Memory array for an intcode interpretor.
-    Supports automatic extension to new indices with default values being 0.
-    """
-
-    def __init__(self):
-        self.arr = []
-
-    def _extend(self, idx):
-        if isinstance(idx, slice):
-            end = idx.stop
-        else:
-            end = idx + 1
-        self.arr += [0] * (end - len(self.arr))
-
-    def _validate_idx(self, idx):
-        non_negative = (
-            (idx.start >= 0 and idx.stop >= 0) if isinstance(idx, slice) else idx >= 0
-        )
-        assert non_negative, "negative indices not supported for memory access"
-        self._extend(idx)
-
-    def __getitem__(self, idx):
-        self._validate_idx(idx)
-        return self.arr.__getitem__(idx)
-
-    def __setitem__(self, idx, value):
-        self._validate_idx(idx)
-        return self.arr.__setitem__(idx, value)
-
-    def load(self, opcodes):
-        """Load a program into memory, discarding any current data."""
-        self.arr = opcodes.copy()
-
-    def clear(self):
-        """Clear memory to the default state."""
-        self.arr = []
-
-
 class RunState(enum.Enum):
     """State enum for the intcode interpretor."""
 
@@ -59,7 +20,7 @@ class Interpretor:
     """Class for the intcode interpretor."""
 
     def __init__(self):
-        self.memory = Memory()
+        self.memory = collections.defaultdict(int)
         self.ipointer = 0
         self.rel_base = 0
         self.state = RunState.IDLE
@@ -158,6 +119,7 @@ class Interpretor:
         self.input_loc = None
         self.state = RunState.RUNNING
 
+    @profile
     def _step(self):
         instruction = self.memory[self.ipointer]
         opcode_idx = instruction % 100
@@ -169,12 +131,18 @@ class Interpretor:
         opcode = self.opcodes[opcode_idx]
 
         arg_start = self.ipointer + 1
-        args = self.memory[arg_start : arg_start + opcode.arg_count + 1]
+        args = [self.memory[arg_start + arg_idx] for arg_idx in range(opcode.arg_count)]
         param_modes = [(mode_section // 10 ** n) % 10 for n in range(opcode.arg_count)]
 
         if opcode.action(*zip(param_modes, args)) == NO_JUMP:
             self.ipointer = self.ipointer + opcode.arg_count + 1
         return CONTINUE
+
+    def load_program(self, opcodes):
+        """Clear memory and put a program into it."""
+        self.memory.clear()
+        for i, opcode in enumerate(opcodes):
+            self.memory[i] = opcode
 
     def run(self, opcodes):
         """Run a list of opcodes, returning False after halting.
@@ -200,7 +168,7 @@ class Interpretor:
             raise ValueError("Input required to continue running!")
         if self.state == RunState.IDLE:
             self.ipointer = 0
-            self.memory.load(opcodes)
+            self.load_program(opcodes)
         self.state = RunState.RUNNING
         while self._step():
             if self.waiting_input() or self.output_queue:
