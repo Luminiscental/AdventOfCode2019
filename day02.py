@@ -12,6 +12,7 @@ def run_prog(interpretor, program, noun, verb):
     edited = program.copy()
     edited[1] = noun
     edited[2] = verb
+    interpretor.reset()
     for _ in interpretor.run(edited):
         pass
     return interpretor.memory[0]
