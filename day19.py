@@ -37,7 +37,7 @@ class Drone:
         """Get the bounds of the tractor beam at a given y value."""
         if y_value not in self.rows:
             prev_start, prev_end = self.rows[y_value - 1]
-            # Assume thing decrease nicely
+            # Assume the beam is increasing
             start = next(
                 col
                 for col in itertools.count(prev_start)
