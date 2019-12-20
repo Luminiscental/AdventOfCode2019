@@ -1,8 +1,15 @@
 """AdventOfCode2019 - Day 20"""
 import collections
 import operator
-from util import adjacent_2d_tuples, bfs
+from util import bfs, dijkstra
 from day18 import parse
+
+Portal = collections.namedtuple("Portal", "label is_inner")
+
+
+def flip_portal(portal):
+    """Flip from inner to outer portal or vice versa."""
+    return Portal(label=portal.label, is_inner=not portal.is_inner)
 
 
 def label_for(fst_letter, snd_letter, direction):
@@ -14,9 +21,12 @@ def label_for(fst_letter, snd_letter, direction):
 
 
 def find_portals(maze):
-    """Find the location and label for every portal entrance in the maze."""
-    # portals[label] = (inner_entrance, outer_entrance)
-    portals = {}
+    """Find each inner and outer portal."""
+    # inner_portals[inner_location] = label
+    inner_portals = {}
+    # outer_portals[outer_location] = label
+    outer_portals = {}
+
     # Look at every point in the maze
     for pos, tile in maze.items():
         # If it's traversable look at everything adjacent to it
@@ -30,61 +40,96 @@ def find_portals(maze):
                     next_tile = maze[next_pos]
                     assert next_tile.isupper(), "ill-formed label found"
                     after_pos = tuple(map(operator.add, next_pos, offset))
-                    is_outer = after_pos not in maze
                     label = label_for(adj_tile, next_tile, offset)
-                    # Store the position that the portal was adjacent to
-                    portals.setdefault(label, [None, None])[int(is_outer)] = pos
-    return portals
+                    if after_pos in maze:
+                        inner_portals[pos] = label
+                    else:
+                        outer_portals[pos] = label
+    return inner_portals, outer_portals
+
+
+def find_distances(maze, inner_portals, outer_portals):
+    """Calculate the distances between each portal using BFS."""
+    distances = collections.defaultdict(dict)
+
+    def update(pos, dist, state):
+        if pos in inner_portals:
+            portal = Portal(label=inner_portals[pos], is_inner=True)
+            if state != portal:
+                distances[state][portal] = dist
+        elif pos in outer_portals:
+            portal = Portal(label=outer_portals[pos], is_inner=False)
+            if state != portal:
+                distances[state][portal] = dist
+        return state
+
+    for inner, label in inner_portals.items():
+        bfs(
+            traversable_pred=lambda pos: maze[pos] == ".",
+            start_node=inner,
+            state_updater=update,
+            initial_state=Portal(label, is_inner=True),
+        )
+    for outer, label in outer_portals.items():
+        bfs(
+            traversable_pred=lambda pos: maze[pos] == ".",
+            start_node=outer,
+            state_updater=update,
+            initial_state=Portal(label, is_inner=False),
+        )
+    return distances
 
 
 def part1(maze, state):
     """Solve for the answer to part 1."""
-    portals = find_portals(maze)
-    portal_pairs = state["portal_pairs"] = [
-        (inner, outer) for inner, outer in portals.values() if inner is not None
-    ]
-    _, start = portals["AA"]
-    _, end = portals["ZZ"]
-    state["start"], state["end"] = start, end
+    inner_portals, outer_portals = find_portals(maze)
+    distances = state["distances"] = find_distances(maze, inner_portals, outer_portals)
+    start_portal = state["start_portal"] = Portal(label="AA", is_inner=False)
+    end_portal = state["end_portal"] = Portal(label="ZZ", is_inner=False)
 
-    def get_adj(pos):
-        for inner, outer in portal_pairs:
-            if pos == inner:
-                yield outer
-            if pos == outer:
-                yield inner
-        for adj in adjacent_2d_tuples(pos):
-            yield adj
+    def get_edges(portal):
+        # Walking edges
+        yield from distances[portal].items()
+        # Teleporting edges
+        if portal.label not in ("AA", "ZZ"):
+            yield flip_portal(portal), 1
 
-    distance, _ = bfs(
-        start_node=start,
-        traversable_pred=lambda pos: maze[pos] == ".",
-        adj_node_producer=get_adj,
-        end_node=end,
+    return dijkstra(
+        nodes=distances.keys(),
+        edge_producer=get_edges,
+        start_node=start_portal,
+        end_node=end_portal,
     )
-    return distance
 
 
-def part2(maze, state):
+def part2(_, state):
     """Solve for the answer to part 2."""
-    portal_pairs = state["portal_pairs"]
-    start = state["start"]
-    end = state["end"]
+    distances = state["distances"]
+    start_portal = state["start_portal"]
+    end_portal = state["end_portal"]
 
-    def get_adj(node):
-        for inner, outer in portal_pairs:
-            if node.lvl > 0 and node.pos == outer:
-                yield Node(pos=inner, lvl=node.lvl - 1)
-            if node.pos == inner:
-                yield Node(pos=outer, lvl=node.lvl + 1)
-        for adj in adjacent_2d_tuples(node.pos):
-            yield Node(pos=adj, lvl=node.lvl)
+    Node = collections.namedtuple("Node", "portal level")
 
-    Node = collections.namedtuple("Node", "pos lvl")
-    distance, _ = bfs(
-        start_node=Node(pos=start, lvl=0),
-        traversable_pred=lambda node: maze[node.pos] == ".",
-        adj_node_producer=get_adj,
-        end_node=Node(pos=end, lvl=0),
+    def get_edges(node):
+        # Walking edges
+        for portal, dist in distances[node.portal].items():
+            yield Node(portal, node.level), dist
+        # Teleporting edges
+        if node.portal.label not in ("AA", "ZZ"):
+            if node.portal.is_inner:
+                yield Node(flip_portal(node.portal), node.level + 1), 1
+            elif node.level > 0:
+                yield Node(flip_portal(node.portal), node.level - 1), 1
+
+    # Assume the shortest path doesn't go beyond level 50
+    max_level = 50
+    return dijkstra(
+        nodes={
+            Node(portal, level)
+            for portal in distances.keys()
+            for level in range(max_level + 1)
+        },
+        edge_producer=get_edges,
+        start_node=Node(start_portal, level=0),
+        end_node=Node(end_portal, level=0),
     )
-    return distance

@@ -15,6 +15,24 @@ def adjacent_2d_tuples(position):
         yield tuple(map(operator.add, position, offset))
 
 
+def dijkstra(nodes, edge_producer, start_node, end_node):
+    """Perform dijkstra's algorithm, returning a distance or math.inf if no path is found."""
+    dists = collections.defaultdict(lambda: math.inf)
+    dists[start_node] = 0
+    unvisited = set(nodes)
+    while unvisited:
+        curr = min(unvisited, key=dists.__getitem__)
+        curr_dist = dists[curr]
+        if curr_dist == math.inf:
+            break
+        for adj, dist in edge_producer(curr):
+            new_dist = curr_dist + dist
+            if new_dist < dists[adj]:
+                dists[adj] = new_dist
+        unvisited.discard(curr)
+    return dists[end_node]
+
+
 def bfs(
     traversable_pred,
     start_node,
