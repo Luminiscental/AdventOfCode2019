@@ -12,8 +12,8 @@ def run_droid(program, script, walk=True, debug=False):
         interpretor.queue_input(ord("\n"))
     interpretor.queue_inputs(map(ord, "WALK\n" if walk else "RUN\n"))
     if debug:
-        for out in interpretor.run(program):
-            print(chr(out), end="")
+        print("".join(map(chr, interpretor.run(program))))
+        return None
     return ilast(interpretor.run(program))
 
 
@@ -29,6 +29,7 @@ def part1(program):
         "NOT T T",  # T=D
         "AND T J",  # J=D&(~A|~B|~C)
     ]
+    # run_droid(program, ["NOT A J"], debug=True)
     return run_droid(program, script)
 
 
