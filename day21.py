@@ -4,23 +4,17 @@ from util import ilast
 from day02 import parse
 
 
-class Droid:
-    """Class to handle the springdroid."""
-
-    def __init__(self, program):
-        self.interpretor = intcode.Interpretor()
-        self.program = program
-
-    def exec(self, script, run=False, debug=False):
-        """Execute a script, given as a sequence of instructions."""
-        for instr in script:
-            self.interpretor.queue_inputs(map(ord, instr))
-            self.interpretor.queue_input(ord("\n"))
-        self.interpretor.queue_inputs(map(ord, "RUN\n" if run else "WALK\n"))
-        if debug:
-            for out in self.interpretor.run(self.program):
-                print(chr(out), end="")
-        return ilast(self.interpretor.run(self.program))
+def run_droid(program, script, walk=True, debug=False):
+    """Execute a springdroid script, expected as a sequence of instruction strings."""
+    interpretor = intcode.Interpretor()
+    for instr in script:
+        interpretor.queue_inputs(map(ord, instr))
+        interpretor.queue_input(ord("\n"))
+    interpretor.queue_inputs(map(ord, "WALK\n" if walk else "RUN\n"))
+    if debug:
+        for out in interpretor.run(program):
+            print(chr(out), end="")
+    return ilast(interpretor.run(program))
 
 
 def part1(program):
@@ -35,7 +29,7 @@ def part1(program):
         "NOT T T",  # T=D
         "AND T J",  # J=D&(~A|~B|~C)
     ]
-    return Droid(program).exec(script)
+    return run_droid(program, script)
 
 
 def part2(program):
@@ -54,4 +48,4 @@ def part2(program):
         "OR H T",  # T=H|E
         "AND T J",  # J=D&(H|E)&(~A|~B|~C)
     ]
-    return Droid(program).exec(script, run=True)
+    return run_droid(program, script, walk=False)
