@@ -19,6 +19,7 @@ def run_droid(program, script, walk=True, debug=False):
 
 def part1(program):
     """Solve for the answer to part 1."""
+    # Jump if there is something to jump over and something to jump to
     script = [
         "NOT A J",  # J=~A
         "NOT B T",  # T=~B
@@ -29,12 +30,12 @@ def part1(program):
         "NOT T T",  # T=D
         "AND T J",  # J=D&(~A|~B|~C)
     ]
-    # run_droid(program, ["NOT A J"], debug=True)
     return run_droid(program, script)
 
 
 def part2(program):
     """Solve for the answer to part 2."""
+    # Jump if there is something to jump over, something to jump to, and somewhere to go after
     script = [
         "NOT A J",  # J=~A
         "NOT B T",  # T=~B
