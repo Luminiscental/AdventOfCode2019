@@ -1,5 +1,4 @@
 """AdventOfCode2019 - Day 1"""
-import functools
 
 
 def fuel_from_mass1(mass):
