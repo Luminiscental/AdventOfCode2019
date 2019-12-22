@@ -35,7 +35,8 @@ def get_input(day_number):
 def run_day(day_num):
     """Solve and print the answers for a given day."""
     print(f"Day {day_num}")
-    puzzle_input = get_input(day_num)
+    with timer("downloading input"):
+        puzzle_input = get_input(day_num)
     day_module = importlib.import_module(day_module_name(day_num))
     day_state = {}
     with timer("parsing input"):
