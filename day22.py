@@ -13,8 +13,6 @@ are not too painful.
 """
 import re
 
-DEAL_WITH_INCREMENT, DEAL_INTO_NEW, CUT = 0, 1, 2
-
 
 def parse(puzzle_input):
     """Parse the puzzle input into the coefficients of the polynomial."""
@@ -56,5 +54,5 @@ def part2(coeffs):
     coeffs[0] *= (power - 1) * inv(coeffs[1] - 1)
     coeffs[1] = power
     # Solve the equation:
-    # ax + b = 2020 -> x = (2020 - b) / a
+    # ax + b = 2020 so x = (2020 - b) / a
     return (2020 - coeffs[0]) * inv(coeffs[1]) % modulo
