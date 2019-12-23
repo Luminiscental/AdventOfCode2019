@@ -116,11 +116,7 @@ class Interpretor:
     def _load_input(self, parameter_modes):
         out = self.memory[self.instr_idx + 1], parameter_modes % 10
         self.instr_idx += 2
-        val = (
-            self.input_func()
-            if self.input_func is not None
-            else self.input_queue.popleft()
-        )
+        val = self.input_queue.popleft() if self.input_queue else self.input_func()
         self._set(out, val)
 
     def _get_output(self, parameter_modes, output_queue, group):
