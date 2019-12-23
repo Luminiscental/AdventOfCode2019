@@ -1,6 +1,7 @@
 """AdventOfCode2019 - Day 23"""
 from multiprocessing import Queue, Process, Event
 import queue
+import time
 import intcode
 from day02 import parse
 
@@ -28,14 +29,14 @@ class NATDevice:
                     prev = self.received.get_nowait()
                 except queue.Empty:
                     break
+            # Check if the network is idle
             if all(flag.is_set() for flag in self.idle_flags):
-                print(f"all idle, sending {prev}")
                 if prev in seen:
                     return prev
+                seen.add(prev)
                 for flag in self.idle_flags:
                     flag.clear()
                 self.nics[0].received.put(prev)
-                seen.add(prev)
 
 
 class NIController:
@@ -58,9 +59,10 @@ class NIController:
             return result
         except queue.Empty:
             self.input_cum += 1
-            if self.input_cum > 999:  # why must this be so high to work????
+            if self.input_cum > 2:
                 self.idle_flag.set()
                 self.input_cum = 0
+            time.sleep(0.005)
             return -1
 
     def run(self, nat, nics):
@@ -99,4 +101,5 @@ def part1(program):
 
 def part2(program):
     """Solve for the answer to part 2."""
-    return run_network(program, lambda nat: nat.first_repeated())
+    packet = run_network(program, lambda nat: nat.first_repeated())
+    return packet[1]
