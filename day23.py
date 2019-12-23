@@ -1,5 +1,5 @@
 """AdventOfCode2019 - Day 23"""
-from multiprocessing import Queue, Process
+from multiprocessing import Queue, Process, Event
 import queue
 import intcode
 from day02 import parse
@@ -8,22 +8,46 @@ from day02 import parse
 class NATDevice:
     """Class for a NAT device. Receives packets."""
 
-    def __init__(self):
+    def __init__(self, nics, idle_flags):
         self.received = Queue()
+        self.nics = nics
+        self.idle_flags = idle_flags
 
     def first_received(self):
         """Return the first received packet."""
         return self.received.get()
 
+    def first_repeated(self):
+        """Run the network until the NAT repeats itself, returning the repeated value."""
+        seen = set()
+        prev = None
+        while True:
+            # Get packets
+            while True:
+                try:
+                    prev = self.received.get_nowait()
+                except queue.Empty:
+                    break
+            if all(flag.is_set() for flag in self.idle_flags):
+                print(f"all idle, sending {prev}")
+                if prev in seen:
+                    return prev
+                for flag in self.idle_flags:
+                    flag.clear()
+                self.nics[0].received.put(prev)
+                seen.add(prev)
+
 
 class NIController:
     """Class for a Network Interface Controller. Sends and receives packets."""
 
-    def __init__(self, program, address):
+    def __init__(self, program, address, idle_flag):
         self.program = program
         self.address = address
         self.received = Queue()
         self.next_input = None
+        self.idle_flag = idle_flag
+        self.input_cum = 0
 
     def _get_input(self):
         if self.next_input is not None:
@@ -33,6 +57,10 @@ class NIController:
             result, self.next_input = self.received.get_nowait()
             return result
         except queue.Empty:
+            self.input_cum += 1
+            if self.input_cum > 999:  # why must this be so high to work????
+                self.idle_flag.set()
+                self.input_cum = 0
             return -1
 
     def run(self, nat, nics):
@@ -40,6 +68,8 @@ class NIController:
         machine = intcode.Interpretor(input_from=self._get_input)
         machine.queue_input(self.address)
         for dest, packet_x, packet_y in machine.run(self.program, group=3):
+            self.input_cum = 0
+            self.idle_flag.clear()
             packet = packet_x, packet_y
             if dest == 255:
                 nat.received.put(packet)
@@ -49,8 +79,9 @@ class NIController:
 
 def run_network(program, nat_user):
     """Run a network, calling nat_user on the NAT once the network is set up."""
-    nat = NATDevice()
-    nics = [NIController(program, address) for address in range(50)]
+    idle_flags = [Event() for _ in range(50)]
+    nics = [NIController(program, addr, idle_flags[addr]) for addr in range(50)]
+    nat = NATDevice(nics, idle_flags)
     processes = [Process(target=nic.run, args=(nat, nics)) for nic in nics]
     for process in processes:
         process.start()
@@ -68,4 +99,4 @@ def part1(program):
 
 def part2(program):
     """Solve for the answer to part 2."""
-    # return run_network(program, lambda nat: nat.first_repeated())
+    return run_network(program, lambda nat: nat.first_repeated())
