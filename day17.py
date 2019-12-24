@@ -2,7 +2,7 @@
 import collections
 import operator
 import intcode
-from util import count_occurences, replace_occurences, ilast
+from util import count_occurences, replace_occurences, ilast, tuple_add
 from day02 import parse
 
 DIRECTIONS = {"<": (-1, 0), ">": (1, 0), "^": (0, -1), "v": (0, 1)}
@@ -59,7 +59,7 @@ def find_path(scaffolds, robot):
     # Assume that naively continuing on the scaffolds gives complete coverage
     while True:
         visited.add(curr_pos)
-        next_pos = tuple(map(operator.add, curr_pos, DIRECTIONS[curr_facing]))
+        next_pos = tuple_add(curr_pos, DIRECTIONS[curr_facing])
         # If we can keep going without turning, do so
         if next_pos in scaffolds:
             steps += 1
@@ -73,7 +73,7 @@ def find_path(scaffolds, robot):
             # Find the first direction we can turn in
             for turn_name, turn in TURNS.items():
                 turn_facing = turn[curr_facing]
-                turn_pos = tuple(map(operator.add, curr_pos, DIRECTIONS[turn_facing]))
+                turn_pos = tuple_add(curr_pos, DIRECTIONS[turn_facing])
                 if turn_pos in scaffolds:
                     curr_facing = turn_facing
                     last_turn = turn_name

@@ -1,7 +1,7 @@
 """AdventOfCode2019 - Day 15"""
 import operator
 import intcode
-from util import bfs
+from util import bfs, tuple_add
 from day02 import parse
 
 NORTH, EAST, SOUTH, WEST = tuple(range(4))
@@ -23,7 +23,7 @@ class Robot:
 
     def calc_move(self, direction):
         """Calculate the resulting position of moving in a direction."""
-        return tuple(map(operator.add, self.pos, DIRECTION_TO_OFFSET[direction]))
+        return tuple_add(self.pos, DIRECTION_TO_OFFSET[direction])
 
     def update_state(self, output, move):
         """Update based on an output code. Returns whether the move was successful."""

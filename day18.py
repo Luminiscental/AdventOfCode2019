@@ -3,7 +3,7 @@ import collections
 import operator
 import itertools
 import functools
-from util import bfs
+from util import bfs, tuple_add
 
 Path = collections.namedtuple("Path", "end dist doors keys")
 Tour = collections.namedtuple("Tour", "pos keys")
@@ -89,7 +89,7 @@ def part2(maze, state):
     replacement = ["@#@", "###", "@#@"]
     start = state["start"]
     for x_offset, y_offset in itertools.product((-1, 0, 1), repeat=2):
-        maze_idx = tuple(map(operator.add, start, (x_offset, y_offset)))
+        maze_idx = tuple_add(start, (x_offset, y_offset))
         maze[maze_idx] = replacement[y_offset + 1][x_offset + 1]
 
     # The strategy here is basically the same as part 1, only slight change in the DFS

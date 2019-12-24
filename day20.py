@@ -1,7 +1,7 @@
 """AdventOfCode2019 - Day 20"""
 import collections
 import operator
-from util import bfs, dijkstra
+from util import bfs, dijkstra, tuple_add
 from day18 import parse
 
 Portal = collections.namedtuple("Portal", "label is_inner")
@@ -32,14 +32,14 @@ def find_portals(maze):
         # If it's traversable look at everything adjacent to it
         if tile == ".":
             for offset in ((1, 0), (0, 1), (-1, 0), (0, -1)):
-                adj = tuple(map(operator.add, pos, offset))
+                adj = tuple_add(pos, offset)
                 adj_tile = maze[adj]
                 # If it's the start of a label find the whole label
                 if adj_tile.isupper():
-                    next_pos = tuple(map(operator.add, adj, offset))
+                    next_pos = tuple_add(adj, offset)
                     next_tile = maze[next_pos]
                     assert next_tile.isupper(), "ill-formed label found"
-                    after_pos = tuple(map(operator.add, next_pos, offset))
+                    after_pos = tuple_add(next_pos, offset)
                     label = label_for(adj_tile, next_tile, offset)
                     if after_pos in maze:
                         inner_portals[pos] = label

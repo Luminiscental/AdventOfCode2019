@@ -9,10 +9,25 @@ import contextlib
 import itertools
 
 
+def tuple_add(tup1, tup2):
+    """Add two tuples component-wise."""
+    return tuple(map(operator.add, tup1, tup2))
+
+
+def tuple_sub(tup1, tup2):
+    """Subtract two tuples component-wise."""
+    return tuple(map(operator.sub, tup1, tup2))
+
+
+def tuple_scale(tup1, scalar):
+    """Multiply the components of a tuple."""
+    return tuple(map(lambda elem: elem * scalar, tup1))
+
+
 def adjacent_2d_tuples(position):
     """Create a generator yielding the adjacent positions, where positions are (x, y) tuples."""
     for offset in ((1, 0), (0, 1), (-1, 0), (0, -1)):
-        yield tuple(map(operator.add, position, offset))
+        yield tuple_add(position, offset)
 
 
 def dijkstra(nodes, edge_producer, start_node, end_node):
