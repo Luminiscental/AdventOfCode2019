@@ -8,10 +8,9 @@ def run_droid(program, script, debug=False):
     """Execute a springdroid script, expected as a sequence of instruction strings."""
     interpretor = intcode.Interpretor()
     for instr in script:
-        interpretor.queue_inputs(map(ord, instr))
-        interpretor.queue_input(ord("\n"))
+        interpretor.queue_inputs(bytes(instr + "\n", "ascii"))
     if debug:
-        print("".join(map(chr, interpretor.run(program))))
+        print(bytes(interpretor.run(program)).decode("ascii"))
         return None
     return ilast(interpretor.run(program))
 

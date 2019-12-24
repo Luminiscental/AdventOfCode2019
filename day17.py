@@ -93,7 +93,7 @@ def queue_programs(interpretor, programs):
     then converted to ascii and queued as input to the program.
     """
     for program in programs:
-        assembled = [ord(c) for c in ",".join(program) + "\n"]
+        assembled = bytes(",".join(program) + "\n", "ascii")
         assert len(assembled) <= 20, "Program was too long"
         interpretor.queue_inputs(assembled)
 
