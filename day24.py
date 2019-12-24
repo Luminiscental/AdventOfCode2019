@@ -72,7 +72,7 @@ def step_layer(layer, inner, outer):
 
 
 def step_layers(layers):
-   # flat neighbours   """Return the next layer states."""
+    """Return the next layer states."""
     # Add padding for bugs to expand into
     layers.append([False] * 5 * 5)
     layers.insert(0, [False] * 5 * 5)
