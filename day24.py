@@ -1,6 +1,8 @@
 """AdventOfCode2019 - Day 24"""
 from util import adjacent_2d_tuples
 
+EMPTY_LAYER = (False,) * 5 * 5
+
 # tile: set(tiles adjacent to tile in inner layer)
 ADJACENT_INNER = {
     (1, 2): {(0, idx) for idx in range(5)},
@@ -21,14 +23,22 @@ def valid(tile):
     return tile[0] in range(5) and tile[1] in range(5)
 
 
+# tile: set(tiles adjacent to tile in same layer)
+ADJACENT_FLAT = {
+    (x, y): set(filter(valid, adjacent_2d_tuples((x, y))))
+    for y in range(5)
+    for x in range(5)
+}
+
+
 def alive(tile, board):
     """Check if a tile is alive given the board state"""
-    return valid(tile) and board[tile[0] + 5 * tile[1]]
+    return board[tile[0] + 5 * tile[1]]
 
 
 def count_neighbours(board, tile):
     """Count the neighbouring bugs to a tile."""
-    return sum(alive(neighbour, board) for neighbour in adjacent_2d_tuples(tile))
+    return sum(alive(neighbour, board) for neighbour in ADJACENT_FLAT[tile])
 
 
 def count_layered_neighbours(layer, inner, outer, tile):
@@ -41,19 +51,21 @@ def count_layered_neighbours(layer, inner, outer, tile):
     return total
 
 
-def alive_next(bug, neighbours):
+def alive_next(alive_now, neighbours):
     """Check whether a tile is alive next given its current neighbours and state."""
-    if bug:
+    if alive_now:
         return neighbours == 1
     if neighbours in (1, 2):
         return True
-    return bug
+    return alive_now
 
 
 def step_board(board):
     """Return the next board state."""
     return tuple(
-        alive_next(alive((x, y), board), count_neighbours(board, (x, y)))
+        alive_next(
+            alive_now=alive((x, y), board), neighbours=count_neighbours(board, (x, y))
+        )
         for y in range(5)
         for x in range(5)
     )
@@ -64,7 +76,8 @@ def step_layer(layer, inner, outer):
     return tuple(
         (x, y) != (2, 2)  # ignore the center tile
         and alive_next(
-            alive((x, y), layer), count_layered_neighbours(layer, inner, outer, (x, y))
+            alive_now=alive((x, y), layer),
+            neighbours=count_layered_neighbours(layer, inner, outer, (x, y)),
         )
         for y in range(5)
         for x in range(5)
@@ -74,16 +87,21 @@ def step_layer(layer, inner, outer):
 def step_layers(layers):
     """Return the next layer states."""
     # Add padding for bugs to expand into
-    layers.append([False] * 5 * 5)
-    layers.insert(0, [False] * 5 * 5)
+    layers.append(EMPTY_LAYER)
+    layers.insert(0, EMPTY_LAYER)
     # Step all the layers
     result_middle = [
         step_layer(layer, inner, outer)
         for outer, layer, inner in zip(layers, layers[1:], layers[2:])
     ]
-    result_start = [step_layer(layers[0], inner=layers[1], outer=None)]
-    result_end = [step_layer(layers[-1], inner=None, outer=layers[-2])]
-    return result_start + result_middle + result_end
+    result_start = step_layer(layers[0], inner=layers[1], outer=None)
+    result_end = step_layer(layers[-1], inner=None, outer=layers[-2])
+    # Only add the start/end if they were actually expanded into
+    return (
+        [result_start] * any(result_start)
+        + result_middle
+        + [result_end] * any(result_end)
+    )
 
 
 def biodiversity(board):
