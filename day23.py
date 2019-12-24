@@ -89,7 +89,7 @@ def run_network(program, nat_user):
         process.start()
     result = nat_user(nat)
     for process in processes:
-        process.kill()
+        process.terminate()
     return result
 
 
