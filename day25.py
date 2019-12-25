@@ -17,6 +17,7 @@ DEATH_ITEMS = {
 }
 
 # Assuming the room layout is the same for everyone
+# Assumption is wrong lol
 TOUR = [
     "south",
     "west",
@@ -160,6 +161,7 @@ class Solver:
 
 def part1(program):
     """Solve for the answer to part 1."""
+    print("WARNING: hard-coded solution")
     output_queue = []
     solver = Solver()
     interpretor = intcode.Interpretor()
