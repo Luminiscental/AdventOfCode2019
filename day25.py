@@ -1,6 +1,8 @@
 """AdventOfCode2019 - Day 25"""
+from typing import Callable, Sequence, Optional
 import collections
 import re
+import dataclasses
 import intcode
 from util import combinations
 from day02 import parse
@@ -60,64 +62,117 @@ def values_after(header, lines):
     return values
 
 
+@dataclasses.dataclass
+class Action:
+    """Class representing a queued action."""
+
+    command: Optional[str] = None
+    preaction: Optional[Callable[[str], None]] = None
+    inventory: Optional[Sequence[str]] = None
+
+
 class Solver:
     """Simple AI to keep track of state and choose commands."""
 
     def __init__(self):
         self.password = None
         self.inv = []
-        self.doors = list(reversed(TOUR))
-        self.combinations = None
-        self.combination = None
+        self.queue = collections.deque()
+        self.tour = list(reversed(TOUR))
+        self.light_items = set()
 
-    def choose_command(self, description):
-        """Returns which available command to use."""
-        # Pick up all safe items
-        items = values_after("Items here:", description.splitlines())
-        for item in items:
-            if item not in DEATH_ITEMS:
-                self.inv.append(item)
-                return f"take {item}"
-        # Move along the tour to pick up everything
-        if self.doors:
-            return self.doors.pop()
-        # At the end try every combination of items in increasing size order
-        if self.combinations is None:
-            self.combinations = list(combinations(self.inv, min_size=3))
-        # Pick a new combination if needed
-        if self.combination is None:
-            self.combination = self.combinations.pop()
-        # Drop all unneeded items
-        for item in self.inv:
-            if item not in self.combination:
-                self.inv.remove(item)
-                return f"drop {item}"
-        # Pick up all needed items
-        for item in self.combination:
-            if item not in self.inv:
-                self.inv.append(item)
-                return f"take {item}"
-        # Try to go south and signal that a new combination is needed
-        self.combination = None
-        return "south"
+    def queue_command(self, command, inventory=None):
+        """Queue a single command to execute."""
+        if self.queue and self.queue[-1].command is None:
+            self.queue[-1].command = command
+            self.queue[-1].inventory = inventory
+        else:
+            self.queue.append(Action(command=command, inventory=inventory))
+
+    def queue_commands(self, commands):
+        """Queue an iterable of commands to execute."""
+        for command in commands:
+            self.queue_command(command)
+
+    def get_command(self, description):
+        """Get the next command to execute given the current description."""
+        if not self.queue:
+            self.choose_action(description)
+        action = self.queue.popleft()
+        if action.preaction is not None:
+            # Perform any preaction
+            action.preaction(description)
+            action.preaction = None
+        if action.inventory is not None:
+            # Drop all unneeded items
+            for item in self.inv:
+                if item not in action.inventory:
+                    self.queue.appendleft(action)
+                    self.inv.remove(item)
+                    return f"drop {item}"
+            # Pick up all needed items
+            for item in action.inventory:
+                if item not in self.inv:
+                    self.queue.appendleft(action)
+                    self.inv.append(item)
+                    return f"take {item}"
+        if action.command is None:  # if there was only a hook try another command
+            return self.get_command(description)
+        return action.command
+
+    def then(self, func):
+        """Add a hook to the next command."""
+        self.queue.append(Action(preaction=func))
+
+    def choose_action(self, description):
+        """Queue commands to execute given the current description."""
+        lines = description.splitlines()
+        # If there are safe items to pick up pick them up
+        safe_items = {
+            item
+            for item in values_after("Items here:", lines)
+            if item not in DEATH_ITEMS
+        }
+        if safe_items:
+            self.queue_commands(f"take {item}" for item in safe_items)
+            self.inv.extend(safe_items)
+            return
+        # If we haven't finished the tour keep going
+        if self.tour:
+            self.queue_command(self.tour.pop())
+            return
+        # If we've reached the end figure out what items are light
+        if not self.light_items:
+            for item in self.inv:
+                self.queue_command("south", inventory=[item])
+
+                def check_was_light(description, item=item):
+                    if "heavier" in description:
+                        self.light_items.add(item)
+
+                self.then(check_was_light)
+            return
+        # Try all big enough combinations of light items in decreasing size order
+        inventories = combinations(self.light_items, min_size=2)
+        for inv in sorted(inventories, key=len, reverse=True):
+            self.queue_command("south", inv)
 
 
 def part1(program):
     """Solve for the answer to part 1."""
     output_queue = []
-    input_queue = collections.deque()
     solver = Solver()
+    interpretor = intcode.Interpretor()
 
     def ascii_input():
-        nonlocal output_queue
-        if not input_queue:
-            description = bytes(output_queue).decode("ascii")
-            output_queue = []
-            command = solver.choose_command(description)
-            input_queue.extend(bytes(command + "\n", "ascii"))
-        return input_queue.popleft()
+        description = bytes(output_queue).decode("ascii")
+        output_queue.clear()
+        command = solver.get_command(description)
+        inputs = bytes(command + "\n", "ascii")
+        interpretor.queue_inputs(inputs[1:])
+        return inputs[0]
 
-    interpretor = intcode.Interpretor(input_from=ascii_input)
+    interpretor.input_from = ascii_input
     for code in interpretor.run(program):
         output_queue.append(code)
     finish_text = bytes(output_queue).decode("ascii")

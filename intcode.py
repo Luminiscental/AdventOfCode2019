@@ -24,7 +24,7 @@ class Interpretor:
         self.memory = collections.defaultdict(int)
         self.relative_base = 0
         self.input_queue = collections.deque()
-        self.input_func = input_from
+        self.input_from = input_from
         self.instr_idx = 0
 
     def reset(self):
@@ -116,7 +116,7 @@ class Interpretor:
     def _load_input(self, parameter_modes):
         out = self.memory[self.instr_idx + 1], parameter_modes % 10
         self.instr_idx += 2
-        val = self.input_queue.popleft() if self.input_queue else self.input_func()
+        val = self.input_queue.popleft() if self.input_queue else self.input_from()
         self._set(out, val)
 
     def _get_output(self, parameter_modes, output_queue, group):
