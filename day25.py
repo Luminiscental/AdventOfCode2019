@@ -1,8 +1,10 @@
-"""AdventOfCode2019 - Day 25"""
-from typing import Callable, Sequence, Optional
+"""AdventOfCode2019 - Day 25
+
+Some pretty ugly / complex code to do BFS and item combination testing.
+As far as I know this should work for any person's input.
+"""
 import collections
 import re
-import dataclasses
 import intcode
 from util import combinations
 from day02 import parse
@@ -16,39 +18,12 @@ DEATH_ITEMS = {
     "photons",
 }
 
-# Assuming the room layout is the same for everyone
-# Assumption is wrong lol
-TOUR = [
-    "south",
-    "west",
-    "south",
-    "north",
-    "east",
-    "north",
-    "east",
-    "west",
-    "north",
-    "east",
-    "south",
-    "south",
-    "north",
-    "north",
-    "north",
-    "north",
-    "south",
-    "south",
-    "west",
-    "north",
-    "north",
-    "west",
-    "west",
-    "east",
-    "east",
-    "north",
-    "north",
-    "north",
-    "west",
-]
+BACKTRACK = {
+    "north": "south",
+    "south": "north",
+    "east": "west",
+    "west": "east",
+}
 
 
 def values_after(header, lines):
@@ -63,105 +38,121 @@ def values_after(header, lines):
     return values
 
 
-@dataclasses.dataclass
-class Action:
-    """Class representing a queued action."""
+class Explorer:
+    """Simple AI to explore the layout of the game using DFS."""
 
-    command: Optional[str] = None
-    preaction: Optional[Callable[[str], None]] = None
-    inventory: Optional[Sequence[str]] = None
+    def __init__(self, parent):
+        self.inv = parent.inv
+        self.route = None
+        self.exit = None
+        self.path = tuple()
+        self.seen_paths = set()
+        self.seen_rooms = set()
+
+    def get_commands(self, description):
+        """Yield commands to execute given the current description."""
+        lines = description.splitlines()
+        items = values_after("Items here:", lines)
+        doors = values_after("Doors here lead:", lines)
+        # Pick up any safe items
+        for item in items:
+            if item not in DEATH_ITEMS:
+                self.inv.add(item)
+                yield f"take {item}"
+        # Check if we found the exit room
+        if "next room" in description:
+            if self.route is None:
+                self.route = self.path
+                for door in doors:
+                    if door != BACKTRACK[self.path[-1]]:
+                        self.exit = door
+                        break
+        else:
+            for door in doors:
+                if self.path and door == BACKTRACK[self.path[-1]]:
+                    continue
+                if self.path + (door,) in self.seen_paths:
+                    continue
+                self.path += (door,)
+                self.seen_paths.add(self.path)
+                yield door
+                return
+        # Backtrack if we can't move forward
+        if self.path:
+            self.path, last = self.path[:-1], self.path[-1]
+            yield BACKTRACK[last]
 
 
 class Solver:
-    """Simple AI to keep track of state and choose commands."""
+    """Simple AI to solve the text adventure game."""
 
     def __init__(self):
-        self.password = None
-        self.inv = []
-        self.queue = collections.deque()
-        self.tour = list(reversed(TOUR))
+        self.inv = set()
+        self.explorer = Explorer(self)
+        self.at_end = False
+        self.command_queue = collections.deque()
         self.light_items = set()
 
     def queue_command(self, command, inventory=None):
-        """Queue a single command to execute."""
-        if self.queue and self.queue[-1].command is None:
-            self.queue[-1].command = command
-            self.queue[-1].inventory = inventory
-        else:
-            self.queue.append(Action(command=command, inventory=inventory))
+        """Queue a command for execution."""
+        self.command_queue.append((command, inventory))
 
     def queue_commands(self, commands):
-        """Queue an iterable of commands to execute."""
+        """Queue an iterable of commands for execution."""
         for command in commands:
             self.queue_command(command)
 
     def get_command(self, description):
-        """Get the next command to execute given the current description."""
-        if not self.queue:
-            self.choose_action(description)
-        action = self.queue.popleft()
-        if action.preaction is not None:
-            # Perform any preaction
-            action.preaction(description)
-            action.preaction = None
-        if action.inventory is not None:
-            # Drop all unneeded items
-            for item in self.inv:
-                if item not in action.inventory:
-                    self.queue.appendleft(action)
-                    self.inv.remove(item)
-                    return f"drop {item}"
-            # Pick up all needed items
-            for item in action.inventory:
-                if item not in self.inv:
-                    self.queue.appendleft(action)
-                    self.inv.append(item)
-                    return f"take {item}"
-        if action.command is None:  # if there was only a hook try another command
+        """Return a command to execute given the current description."""
+        # Return any queued commands
+        if self.command_queue:
+            command, inventory = self.command_queue.popleft()
+            if inventory is not None:
+                for item in inventory:
+                    if item not in self.inv:
+                        self.command_queue.appendleft((command, inventory))
+                        self.inv.add(item)
+                        return f"take {item}"
+                for item in self.inv:
+                    if item not in inventory:
+                        self.command_queue.appendleft((command, inventory))
+                        self.inv.remove(item)
+                        return f"drop {item}"
+            if isinstance(command, str):
+                return command
+            command(description)
             return self.get_command(description)
-        return action.command
-
-    def then(self, func):
-        """Add a hook to the next command."""
-        self.queue.append(Action(preaction=func))
-
-    def choose_action(self, description):
-        """Queue commands to execute given the current description."""
-        lines = description.splitlines()
-        # If there are safe items to pick up pick them up
-        safe_items = {
-            item
-            for item in values_after("Items here:", lines)
-            if item not in DEATH_ITEMS
-        }
-        if safe_items:
-            self.queue_commands(f"take {item}" for item in safe_items)
-            self.inv.extend(safe_items)
-            return
-        # If we haven't finished the tour keep going
-        if self.tour:
-            self.queue_command(self.tour.pop())
-            return
-        # If we've reached the end figure out what items are light
+        # Get to the penultimate room
+        if not self.at_end:
+            explore_commands = list(self.explorer.get_commands(description))
+            if explore_commands:
+                self.queue_commands(explore_commands)
+                return self.get_command(description)
+            assert self.explorer.route is not None, "Could not find the exit"
+            self.queue_commands(self.explorer.route)
+            self.at_end = True
+            return self.get_command(description)
+        # Figure out which items are light
         if not self.light_items:
             for item in self.inv:
-                self.queue_command("south", inventory=[item])
+                self.queue_command(self.explorer.exit, inventory=[item])
 
                 def check_was_light(description, item=item):
                     if "heavier" in description:
                         self.light_items.add(item)
 
-                self.then(check_was_light)
-            return
-        # Try all big enough combinations of light items in decreasing size order
-        inventories = combinations(self.light_items, min_size=2)
-        for inv in sorted(inventories, key=len, reverse=True):
-            self.queue_command("south", inv)
+                self.queue_command(check_was_light)
+            return self.get_command(description)
+        # Try all big enough combinations of light items
+        for combination in sorted(
+            combinations(self.light_items, min_size=2), key=len, reverse=True
+        ):
+            self.queue_command(self.explorer.exit, inventory=combination)
+        return self.get_command(description)
 
 
 def part1(program):
     """Solve for the answer to part 1."""
-    print("WARNING: hard-coded solution")
     output_queue = []
     solver = Solver()
     interpretor = intcode.Interpretor()
