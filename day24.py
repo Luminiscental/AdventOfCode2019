@@ -106,7 +106,7 @@ def step_layers(layers):
 
 def biodiversity(board):
     """Calculate the biodiversity of a board state."""
-    return sum(2 ** idx if bug else 0 for idx, bug in enumerate(board))
+    return sum(2 ** idx for idx, bug in enumerate(board) if bug)
 
 
 def bug_count(layers):

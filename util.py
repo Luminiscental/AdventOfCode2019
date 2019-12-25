@@ -124,6 +124,16 @@ def apply_trim_args(func, *args):
     return func(*args[:arg_count])
 
 
+def combinations(sequence, min_size=None, max_size=None):
+    """Yield all combinations of elements from a finite sequence."""
+    if min_size is None:
+        min_size = 0
+    if max_size is None:
+        max_size = len(sequence)
+    for count in range(min_size, max_size + 1):
+        yield from itertools.combinations(sequence, count)
+
+
 def repeat_each(iterable, count):
     """Make an iterator repeating every element of an iterable a given number of times."""
     for elem in iterable:
