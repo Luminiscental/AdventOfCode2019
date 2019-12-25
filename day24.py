@@ -13,7 +13,7 @@ ADJACENT_INNER = {
 
 # tile: set(tiles adjacent to tile in outer layer)
 ADJACENT_OUTER = {
-    outer: set(inner for inner in ADJACENT_INNER if outer in ADJACENT_INNER[inner])
+    outer: {inner for inner in ADJACENT_INNER if outer in ADJACENT_INNER[inner]}
     for outer in set.union(*ADJACENT_INNER.values())
 }
 
@@ -116,11 +116,7 @@ def bug_count(layers):
 
 def parse(puzzle_input):
     """Parse the puzzle input into a tuple of tile states."""
-    return tuple(
-        char == "#"
-        for y, row in enumerate(puzzle_input.splitlines())
-        for x, char in enumerate(row)
-    )
+    return tuple(char == "#" for row in puzzle_input.splitlines() for char in row)
 
 
 def part1(initial_state):

@@ -1,6 +1,5 @@
 """AdventOfCode2019 - Day 20"""
 import collections
-import operator
 from util import bfs, dijkstra, tuple_add
 from day18 import parse
 

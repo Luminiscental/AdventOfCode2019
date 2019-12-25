@@ -1,5 +1,4 @@
 """AdventOfCode2019 - Day 15"""
-import operator
 import intcode
 from util import bfs, tuple_add
 from day02 import parse

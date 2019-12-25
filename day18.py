@@ -1,6 +1,5 @@
 """AdventOfCode2019 - Day 18"""
 import collections
-import operator
 import itertools
 import functools
 from util import bfs, tuple_add

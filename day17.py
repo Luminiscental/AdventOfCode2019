@@ -1,6 +1,5 @@
 """AdventOfCode2019 - Day 17"""
 import collections
-import operator
 import intcode
 from util import count_occurences, replace_occurences, ilast, tuple_add
 from day02 import parse
